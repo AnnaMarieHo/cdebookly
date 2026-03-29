@@ -1,6 +1,7 @@
 import os
 from collections.abc import AsyncGenerator
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
+from sqlalchemy.pool import NullPool
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 
@@ -15,6 +16,7 @@ else:
 engine = create_async_engine(
     DATABASE_URL,
     connect_args={"prepared_statement_cache_size": 0},
+    poolclass=NullPool,
 )
 async_session_maker = async_sessionmaker(engine, class_=AsyncSession)
 
