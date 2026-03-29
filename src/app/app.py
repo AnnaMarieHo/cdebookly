@@ -13,9 +13,10 @@ import os
 log = logging.getLogger(__name__)
 
 DATABASE_URL = os.getenv("DATABASE_URL")
+# DATABASE_URL = "sqlite+aiosqlite:///./codebookly_testing.db"
 
-if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
-    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+asyncpg://", 1)
+# if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
+#     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+asyncpg://", 1)
 
 if not DATABASE_URL:
     log.warning("DATABASE_URL not found. Database features will be unavailable.")

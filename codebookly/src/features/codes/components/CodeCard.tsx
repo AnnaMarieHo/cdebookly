@@ -37,7 +37,7 @@ function CodeCardImpl({
           <input
             type="checkbox"
             readOnly
-            className="size-3.5 rounded border-border-ui accent-[var(--primary)] cursor-pointer"
+            className="appearance-none size-3.5 rounded-full border border-border-ui cursor-pointer checked:bg-[var(--primary)]"
             checked={selected}
             onClick={(e) => onSelectionClick(e, index, code.code)}
             aria-label={`Select code ${code.code}`}
