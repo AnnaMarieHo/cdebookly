@@ -1,11 +1,16 @@
+import os
 from collections.abc import AsyncGenerator
-import uuid
-from sqlalchemy import Column, Integer, String, ForeignKey, Text, DateTime
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
-from sqlalchemy.orm import DeclarativeBase, relationship
 
+DATABASE_URL = os.getenv("DATABASE_URL")
 
-DATABASE_URL = "sqlite+aiosqlite:///./codebookly_testing.db"
+if not DATABASE_URL:
+    DATABASE_URL = "sqlite+aiosqlite:///./codebookly_testing.db"
+else:
+    if DATABASE_URL.startswith("postgres://"):
+        DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+asyncpg://", 1)
+    elif DATABASE_URL.startswith("postgresql://") and "+asyncpg" not in DATABASE_URL:
+        DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://", 1)
 
 engine = create_async_engine(DATABASE_URL)
 async_session_maker = async_sessionmaker(engine, class_=AsyncSession)
