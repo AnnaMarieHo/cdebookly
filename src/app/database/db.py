@@ -17,7 +17,9 @@ engine = create_async_engine(
     DATABASE_URL,
     connect_args={"prepared_statement_cache_size": 0},
     poolclass=NullPool,
+    isolation_level="AUTOCOMMIT",
 )
+
 async_session_maker = async_sessionmaker(engine, class_=AsyncSession)
 
 async def get_async_session() -> AsyncGenerator[AsyncSession, None]:
