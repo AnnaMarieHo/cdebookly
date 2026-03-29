@@ -17,11 +17,12 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+asyncpg://", 1)
 
-if DATABASE_URL:
-    engine = create_async_engine(DATABASE_URL, echo=True)
+if not DATABASE_URL:
+    log.warning("DATABASE_URL not found. Database features will be unavailable.")
 else:
-    log.warning("DATABASE_URL not found. Database features will be unavailable.")TABASE_URL.replace("postgres://", "postgresql+asyncpg://", 1)
-
+    if DATABASE_URL.startswith("postgres://"):
+        DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+asyncpg://", 1)
+        
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     print("Starting up...")
