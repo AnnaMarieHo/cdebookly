@@ -4,3 +4,6 @@ __pycache__/
 venv/
 .env
 frontend/node_modules/
+src/codebookly.db
+src/codebookly_testing.db
+src/codebookly_testing_old.db
