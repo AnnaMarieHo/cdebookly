@@ -4,9 +4,11 @@ WORKDIR /code
 
 RUN pip install uv
 
-COPY src/ .
+COPY src/pyproject.toml src/uv.lock ./
 
-RUN uv sync --frozen --system
+RUN uv pip install --system -r pyproject.toml
+
+COPY src/ .
 
 EXPOSE 7860
 
