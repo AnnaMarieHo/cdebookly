@@ -2,14 +2,25 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware  
 from contextlib import asynccontextmanager
+from sqlalchemy.ext.asyncio import create_async_engine
 from app.api.routes import (
     codes, chapters, agencies, definitions, 
     comittee_designations, index, sections
 )
 import logging
+import os
 
 log = logging.getLogger(__name__)
 
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+asyncpg://", 1)
+
+if DATABASE_URL:
+    engine = create_async_engine(DATABASE_URL, echo=True)
+else:
+    log.warning("DATABASE_URL not found. Database features will be unavailable.")TABASE_URL.replace("postgres://", "postgresql+asyncpg://", 1)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
