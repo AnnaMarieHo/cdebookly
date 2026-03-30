@@ -127,9 +127,7 @@ export default function SideBar({
               onClick={() => onSectionSelect(section.section)}
             >
               <div className="flex flex-row items-center gap-3  pb-2">
-                {/* <span className=" text-[var(--text-main)]">
-                  {section.section}
-                </span> */}
+                <span className="">{section.section}</span>
                 <span className="block text-[0.75rem] text-[var(--text-muted)]">
                   {section.title}
                 </span>
