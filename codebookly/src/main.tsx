@@ -1,6 +1,7 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { CODEBOOKLY_ICON_SRC } from "./branding";
+import { AuthProvider } from "./features/auth/AuthContext";
 import "./index.css";
 import App from "./App.tsx";
 
@@ -17,6 +18,8 @@ import App from "./App.tsx";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <App />
+    <AuthProvider>
+      <App />
+    </AuthProvider>
   </StrictMode>,
 );
