@@ -52,6 +52,8 @@ app.add_middleware(
         "http://127.0.0.1:5173",
         "http://127.0.0.1:5173/",
         "https://cdebookly.onrender.com",
+        "https://cdebookly.vercel.app",
+        "https://cdebookly-git-main-annas-projects-d3515f19.vercel.app",
     ],
     allow_credentials=True,
     allow_methods=["*"],
