@@ -5,3 +5,4 @@ venv/
 .env
 frontend/node_modules/
 src/*.db
+*.db

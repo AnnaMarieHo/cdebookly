@@ -62,8 +62,8 @@ export function CodeFullContextModal({ open, codeId, onClose }: Props) {
           <div className="space-y-4">
             {state.partial ? (
               <p className="text-sm text-text-muted m-0 rounded-lg border border-border-ui bg-[var(--bg-card)] px-3 py-2">
-                Loaded code text only; standards, committee designations, and index
-                terms were not available.
+                Loaded code text only; standards, committee designations, and
+                index terms were not available.
               </p>
             ) : null}
             <EnrichedCodeContent enriched={state.data} />
