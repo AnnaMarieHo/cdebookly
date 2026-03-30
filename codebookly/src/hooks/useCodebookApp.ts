@@ -70,7 +70,8 @@ export function useCodebookApp() {
         if (cancelled) return;
 
         if (codesResult.status === "fulfilled") {
-          setCodes(codesResult.value ?? []);
+          const v = codesResult.value;
+          setCodes(Array.isArray(v) ? v : []);
           clearBrowseMeta(
             setSectionChapterMeta,
             setDesignationMeta,
@@ -78,18 +79,22 @@ export function useCodebookApp() {
           );
         }
         if (sectionsResult.status === "fulfilled") {
-          setSections(sectionsResult.value ?? []);
+          const v = sectionsResult.value;
+          setSections(Array.isArray(v) ? v : []);
         }
         if (chaptersResult.status === "fulfilled") {
-          setChapters(chaptersResult.value ?? []);
+          const v = chaptersResult.value;
+          setChapters(Array.isArray(v) ? v : []);
         }
         if (designationsResult.status === "fulfilled") {
-          setDesignations(designationsResult.value ?? []);
+          const v = designationsResult.value;
+          setDesignations(Array.isArray(v) ? v : []);
         } else {
           setDesignations([]);
         }
         if (agenciesResult.status === "fulfilled") {
-          setAgencies(agenciesResult.value ?? []);
+          const v = agenciesResult.value;
+          setAgencies(Array.isArray(v) ? v : []);
         } else {
           setAgencies([]);
         }

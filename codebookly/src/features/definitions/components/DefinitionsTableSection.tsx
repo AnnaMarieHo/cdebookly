@@ -26,7 +26,7 @@ export const DefinitionsTableSection = memo(function DefinitionsTableSection({
           row={row}
         />
       )),
-    [data]
+    [data],
   );
 
   return (
@@ -39,7 +39,7 @@ export const DefinitionsTableSection = memo(function DefinitionsTableSection({
               type="button"
               disabled={data.page <= 1 || loading}
               onClick={() => goToPage(data.page - 1)}
-              className="p-2 rounded-lg border border-[var(--border)] text-[var(--text-main)] hover:bg-[#334155] disabled:opacity-40 disabled:pointer-events-none"
+              className="p-2 rounded-lg border border-[var(--border)] text-[var(--text-main)] hover:bg-[var(--surface-hover)] disabled:opacity-40 disabled:pointer-events-none"
               aria-label="Previous page"
             >
               <ChevronLeft size={18} />
@@ -51,7 +51,7 @@ export const DefinitionsTableSection = memo(function DefinitionsTableSection({
               type="button"
               disabled={data.page >= data.total_pages || loading}
               onClick={() => goToPage(data.page + 1)}
-              className="p-2 rounded-lg border border-[var(--border)] text-[var(--text-main)] hover:bg-[#334155] disabled:opacity-40 disabled:pointer-events-none"
+              className="p-2 rounded-lg border border-[var(--border)] text-[var(--text-main)] hover:bg-[var(--surface-hover)] disabled:opacity-40 disabled:pointer-events-none"
               aria-label="Next page"
             >
               <ChevronRight size={18} />
@@ -79,13 +79,15 @@ export const DefinitionsTableSection = memo(function DefinitionsTableSection({
         <div className="overflow-x-auto">
           <table className="w-full min-w-[640px] border-collapse text-left">
             <thead>
-              <tr className="bg-[#252525] text-[var(--text-muted)] text-[0.65rem] md:text-xs uppercase tracking-wide">
+              <tr className="bg-[var(--surface-subtle)] text-[var(--text-muted)] text-[0.65rem] md:text-xs uppercase tracking-wide">
                 <th className="py-2.5 px-2 md:px-3 font-semibold">Term</th>
                 <th className="py-2.5 px-2 md:px-3 font-semibold">Tag</th>
                 <th className="py-2.5 px-2 md:px-3 font-semibold hidden sm:table-cell">
                   Committee
                 </th>
-                <th className="py-2.5 px-2 md:px-3 font-semibold">Definition</th>
+                <th className="py-2.5 px-2 md:px-3 font-semibold">
+                  Definition
+                </th>
               </tr>
             </thead>
             <tbody>{tableRows}</tbody>

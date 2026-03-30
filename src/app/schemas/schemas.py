@@ -4,78 +4,83 @@ from pydantic import BaseModel, ConfigDict
 
 # Code Schemas
 
+
 class Code(BaseModel):
     model_config = ConfigDict(from_attributes=True)
-    entry_type: str
-    letter_tag: str
-    code: str
-    chapter: str
-    parent_code: str
-    root_code: str
-    title: str
-    figure: str
-    table: str
-    content: str
-    section_code: str
-    section_title: str
-    sort_index: int
+    entry_type: Optional[str] = None
+    letter_tag: Optional[str] = None
+    code: Optional[str] = None
+    chapter: Optional[str] = None
+    parent_code: Optional[str] = None
+    root_code: Optional[str] = None
+    title: Optional[str] = None
+    figure: Optional[str] = None
+    table: Optional[str] = None
+    content: Optional[str] = None
+    section_code: Optional[str] = None
+    section_title: Optional[str] = None
+    sort_index: Optional[int] = None
+
 
 class TableOfContents(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
-    title: str
-    section: str
-
-class EnrichedCode(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
+    title: Optional[str] = None
+    section: Optional[str] = None
 
 
 # Study Content Schemas. aka Chapters and Appendices
 
+
 class StudyContentBase(BaseModel):
     model_config = ConfigDict(from_attributes=True)
-    title: str
-    description: str
-    about: str
+    title: Optional[str] = None
+    description: Optional[str] = None
+    about: Optional[str] = None
 
 
 class Chapter(StudyContentBase):
-    chapter: str
+    chapter: Optional[str] = None
+
 
 class Appendix(StudyContentBase):
-    appendix: str
+    appendix: Optional[str] = None
+
 
 # Agency Schemas
 
+
 class Agency(BaseModel):
     model_config = ConfigDict(from_attributes=True)
-    
-    agency: str
-    agency_info: str
+
+    agency: Optional[str] = None
+    agency_info: Optional[str] = None
+
 
 class AgencyStandards(BaseModel):
     model_config = ConfigDict(from_attributes=True)
-    
-    agency: str
-    standard_id: str
-    definition: str
-    codes: str
-    tables: str
-    images: str
-    raw_references: str
+
+    agency: Optional[str] = None
+    standard_id: Optional[str] = None
+    definition: Optional[str] = None
+    codes: Optional[str] = None
+    tables: Optional[str] = None
+    images: Optional[str] = None
+    raw_references: Optional[str] = None
 
 
 class CommitteeDesignation(BaseModel):
     model_config = ConfigDict(from_attributes=True)
-    letter_tag: str
-    description: str
+    letter_tag: Optional[str] = None
+    description: Optional[str] = None
+
 
 class Definition(BaseModel):
     model_config = ConfigDict(from_attributes=True)
-    definition: str
-    term: str
-    letter_tag: str
-    committee_designation: str
+    definition: Optional[str] = None
+    term: Optional[str] = None
+    letter_tag: Optional[str] = None
+    committee_designation: Optional[str] = None
 
 
 class DefinitionPage(BaseModel):
@@ -87,30 +92,33 @@ class DefinitionPage(BaseModel):
     page_size: int
     total_pages: int
 
+
 class IndexTerm(BaseModel):
     model_config = ConfigDict(from_attributes=True)
-    term_id: int
-    term: str
+    term_id: Optional[int] = None
+    term: Optional[str] = None
+
 
 class IndexReference(BaseModel):
     model_config = ConfigDict(from_attributes=True)
-    id: int
-    term: str
-    label: str
-    ref_id: str
-    ref_type: str
-    breadcrumb: str
+    id: Optional[int] = None
+    term: Optional[str] = None
+    label: Optional[str] = None
+    ref_id: Optional[str] = None
+    ref_type: Optional[str] = None
+    breadcrumb: Optional[str] = None
+
 
 class Section(BaseModel):
     model_config = ConfigDict(from_attributes=True)
-    title: str
-    section_code: str
+    title: Optional[str] = None
+    section_code: Optional[str] = None
     section_title: Optional[str] = None
-    code: str
-    parent_code: str
-    chapter: str
-    letter_tag: str
-    content: str
+    code: Optional[str] = None
+    parent_code: Optional[str] = None
+    chapter: Optional[str] = None
+    letter_tag: Optional[str] = None
+    content: Optional[str] = None
     figure: Optional[str] = None
     table: Optional[str] = None
 
@@ -118,7 +126,7 @@ class Section(BaseModel):
 class EnrichedCode(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     code: Code
-    chapter_info: Chapter
+    chapter_info: Optional[Chapter] = None
     standards: list[dict]
     committee_designations: list[CommitteeDesignation]
     index_terms: list[IndexReference]

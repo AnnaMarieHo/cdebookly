@@ -7,7 +7,7 @@ export const DefinitionRow = memo(function DefinitionRow({
   row: DefinitionEntry;
 }) {
   return (
-    <tr className="border-b border-[var(--border)] hover:bg-[#252525]/80 align-top">
+    <tr className="border-b border-[var(--border)] hover:bg-[var(--surface-hover)]/80 align-top">
       <td className="py-2 px-2 md:py-2.5 md:px-3 text-xs md:text-sm font-semibold text-[var(--text-main)] max-w-[8rem] md:max-w-[12rem]">
         <span className="line-clamp-2" title={row.term}>
           {row.term}

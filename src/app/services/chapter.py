@@ -9,12 +9,12 @@ class ChapterService:
         self.logger = logging.getLogger(__name__)
 
     async def get_chapters(self, session: AsyncSession):
-        query = select(Chapters).where(Chapters.chapter.isnot("")).order_by(cast(Chapters.chapter, Integer).asc())
+        query = select(Chapters).where(Chapters.chapter != '').order_by(cast(Chapters.chapter, Integer).asc())
         result = await session.execute(query)
         return result.scalars().all()
 
     async def get_appendix(self, session: AsyncSession):
-        query = select(Chapters).where(Chapters.appendix.isnot("")).order_by(Chapters.appendix.asc())
+        query = select(Chapters).where(Chapters.appendix != '').order_by(Chapters.appendix.asc())
         result = await session.execute(query)
         return result.scalars().all()
 

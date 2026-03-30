@@ -36,14 +36,14 @@ export function SelectionActionBar({
             type="button"
             onClick={onSelectAllVisible}
             disabled={visibleCount === 0}
-            className="text-sm font-medium rounded-lg px-3 py-2 border border-[var(--border)] text-[var(--text-main)] hover:bg-[#334155] disabled:opacity-40 disabled:pointer-events-none"
+            className="text-sm font-medium rounded-lg px-3 py-2 border border-[var(--border)] text-[var(--text-main)] hover:bg-[var(--surface-hover)] disabled:opacity-40 disabled:pointer-events-none"
           >
             Select all visible
           </button>
           <button
             type="button"
             onClick={onClear}
-            className="text-sm font-medium rounded-lg px-3 py-2 border border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[#334155]"
+            className="text-sm font-medium rounded-lg px-3 py-2 border border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--surface-hover)]"
           >
             Clear
           </button>
@@ -59,7 +59,7 @@ export function SelectionActionBar({
             type="button"
             onClick={onDownloadEnrichedJson}
             disabled={enrichedDownloadBusy}
-            className="inline-flex items-center gap-2 text-sm font-semibold rounded-lg px-4 py-2 border border-[var(--primary)] text-[var(--primary)] hover:bg-[#334155]/50 disabled:opacity-50 disabled:pointer-events-none"
+            className="inline-flex items-center gap-2 text-sm font-semibold rounded-lg px-4 py-2 border border-[var(--primary)] text-[var(--primary)] hover:bg-[var(--surface-hover)]/50 disabled:opacity-50 disabled:pointer-events-none"
           >
             {enrichedDownloadBusy ? (
               <Loader2 size={16} className="animate-spin" aria-hidden />

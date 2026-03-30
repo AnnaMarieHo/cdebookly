@@ -1,7 +1,7 @@
 export const COLORS = {
-  primary: "#3b82f6",
-  textMain: "#ececec",
-  textMuted: "#94a3b8",
-  bgCard: "#1e1e1e",
-  border: "#334155",
+  primary: "#4b6b8f",
+  textMain: "#b8b8b8",
+  textMuted: "#6e6e6e",
+  bgCard: "#242424",
+  border: "#2e2e2e",
 } as const;

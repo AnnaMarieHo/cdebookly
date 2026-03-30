@@ -1,3 +1,4 @@
+import { Expand } from "lucide-react";
 import { memo } from "react";
 import type { CodeRecord } from "../../../types/codebook";
 
@@ -37,31 +38,37 @@ function CodeCardImpl({
           <input
             type="checkbox"
             readOnly
-            className="size-3.5 rounded border-border-ui accent-[var(--primary)] cursor-pointer"
+            className="appearance-none size-3.5 rounded-full border bg-whiteborder-border-ui cursor-pointer checked:bg-[var(--primary)]"
             checked={selected}
             onClick={(e) => onSelectionClick(e, index, code.code)}
             aria-label={`Select code ${code.code}`}
           />
         </label>
 
-        <button
-          type="button"
-          onClick={onOpenDetail}
-          className="flex-1 min-w-0 text-left rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg)] cursor-pointer border-0 bg-transparent p-0 font-inherit"
-        >
-          <div className="mb-2">
-            <span className="block text-[0.80rem] uppercase text-primary tracking-wide mb-0.5 font-medium line-clamp-1">
-              {code.section_code}
-              {code.section_title != null && code.section_title !== ""
-                ? ` — ${code.section_title}`
-                : ""}
-            </span>
-            <h2 className="text-sm font-extrabold m-0 text-text-main leading-tight">
-              {code.code}
-            </h2>
-            <h3 className="text-xs font-semibold text-text-muted mt-0.5 mb-0 line-clamp-2 leading-snug">
-              {code.title}
-            </h3>
+        <div className="flex-1 min-w-0">
+          <div className="flex gap-2 items-start justify-between mb-2">
+            <div className="min-w-0 flex-1">
+              <span className="block text-[0.80rem] uppercase text-primary tracking-wide mb-0.5 font-medium line-clamp-1">
+                {code.section_code}
+                {code.section_title != null && code.section_title !== ""
+                  ? ` — ${code.section_title}`
+                  : ""}
+              </span>
+              <h2 className="text-sm font-extrabold m-0 text-text-main leading-tight">
+                {code.code}
+              </h2>
+              <h3 className="text-xs font-semibold text-text-muted mt-0.5 mb-0 line-clamp-2 leading-snug">
+                {code.title}
+              </h3>
+            </div>
+            <button
+              type="button"
+              onClick={onOpenDetail}
+              className="shrink-0 rounded-md border border-border-ui bg-card p-1.5 text-text-muted hover:border-primary hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg)]"
+              aria-label={`Open full context for ${code.code}`}
+            >
+              <Expand size={16} strokeWidth={2.25} aria-hidden />
+            </button>
           </div>
 
           <div className="mb-2">
@@ -80,7 +87,7 @@ function CodeCardImpl({
               </span>
             )}
           </div>
-        </button>
+        </div>
       </div>
     </article>
   );
