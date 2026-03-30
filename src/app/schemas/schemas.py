@@ -12,7 +12,7 @@ class Code(BaseModel):
     chapter: str
     parent_code: str
     root_code: str
-    title: str
+    title: Optional[str] = None
     figure: Optional[str] = None
     table: Optional[str] = None
     content: str
