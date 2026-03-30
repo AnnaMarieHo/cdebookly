@@ -7,7 +7,7 @@ from pydantic import BaseModel, ConfigDict
 class Code(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     entry_type: str
-    letter_tag: str
+    letter_tag: Optional[str] = None
     code: str
     chapter: str
     parent_code: str
