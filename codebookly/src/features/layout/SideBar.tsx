@@ -81,7 +81,7 @@ export default function SideBar({
         <button
           type="button"
           onClick={() => setIsExpanded((e) => !e)}
-          className="p-2 rounded-lg hover:bg-[#334155] text-[var(--text-muted)] hover:text-[var(--text-main)]"
+          className="p-2 rounded-lg hover:bg-[var(--surface-hover)] text-[var(--text-muted)] hover:text-[var(--text-main)]"
           aria-label={isExpanded ? "Collapse sidebar" : "Expand sidebar"}
         >
           {isExpanded ? <ChevronLeft size={20} /> : <Menu size={20} />}
@@ -126,10 +126,10 @@ export default function SideBar({
               className={`${SIDEBAR_SUB_LINK} w-full text-left border-0 bg-transparent cursor-pointer font-inherit`}
               onClick={() => onSectionSelect(section.section)}
             >
-              <div className="flex flex-row items-center gap-3 border-b border-[var(--border)] pb-2">
-                <span className=" text-[var(--text-main)]">
+              <div className="flex flex-row items-center gap-3  pb-2">
+                {/* <span className=" text-[var(--text-main)]">
                   {section.section}
-                </span>
+                </span> */}
                 <span className="block text-[0.75rem] text-[var(--text-muted)]">
                   {section.title}
                 </span>
@@ -153,13 +153,11 @@ export default function SideBar({
               className={`${SIDEBAR_SUB_LINK} w-full text-left border-0 bg-transparent cursor-pointer font-inherit`}
               onClick={() => onChapterSelect(chapter.chapter)}
             >
-              <div className="flex flex-row items-center gap-3 border-b border-[var(--border)] pb-2">
-                <span className=" text-[var(--text-main)]">
-                  {chapter.chapter}
-                </span>
-                <span className="block text-[0.75rem] text-[var(--text-muted)]">
+              <div className="flex flex-row items-center gap-3  pb-2">
+                <span className="">Chapter {chapter.chapter}</span>
+                {/* <span className="block text-[0.75rem] text-[var(--text-muted)]">
                   {chapter.title}
-                </span>
+                </span> */}
               </div>
             </button>
           ))}

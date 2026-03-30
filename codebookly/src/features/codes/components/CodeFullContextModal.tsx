@@ -27,7 +27,7 @@ export function CodeFullContextModal({ open, codeId, onClose }: Props) {
         role="dialog"
         aria-modal="true"
         aria-labelledby="full-context-title"
-        className="relative z-10 w-full max-w-3xl max-h-[min(90vh,900px)] overflow-y-auto rounded-xl border border-border-ui bg-card p-6 md:p-8 shadow-xl text-left"
+        className="relative z-10 w-full max-w-3xl max-h-[min(90vh,900px)] overflow-y-auto custom-scrollbar rounded-xl border border-border-ui bg-card p-6 md:p-8 shadow-xl text-left"
       >
         <div className="flex justify-between items-start gap-4 mb-6 sticky top-0 bg-card pb-2 border-b border-border-ui -mx-6 px-6 md:-mx-8 md:px-8 z-10">
           <h2

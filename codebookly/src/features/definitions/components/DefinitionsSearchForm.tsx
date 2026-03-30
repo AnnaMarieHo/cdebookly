@@ -49,7 +49,7 @@ export const DefinitionsSearchForm = memo(function DefinitionsSearchForm({
         <button
           type="submit"
           disabled={loading}
-          className="inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold border border-[var(--primary)] text-[var(--primary)] hover:bg-[#334155]/50 disabled:opacity-50 disabled:pointer-events-none"
+          className="inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold border border-[var(--primary)] text-[var(--primary)] hover:bg-[var(--surface-hover)]/50 disabled:opacity-50 disabled:pointer-events-none"
         >
           {loading ? (
             <Loader2 size={16} className="animate-spin" aria-hidden />

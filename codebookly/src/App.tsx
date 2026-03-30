@@ -44,7 +44,7 @@ function App() {
       <div className="flex-1 ml-20 md:ml-72">
         <main className="max-w-[1600px] mx-auto px-4 py-6 sm:px-6 md:px-10 md:py-10 lg:px-12 lg:py-12">
           <header className="mb-12 flex flex-wrap items-center gap-4 md:gap-5">
-            <Library size={60} className="text-blue-500" />
+            <Library size={60} className="text-primary" />
 
             <h1 className="text-3xl md:text-3xl font-black text-[var(--text-h)] m-0">
               Codebookly Admin
