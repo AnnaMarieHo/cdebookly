@@ -13,8 +13,8 @@ class Code(BaseModel):
     parent_code: str
     root_code: str
     title: str
-    figure: str
-    table: str
+    figure: Optional[str] = None
+    table: Optional[str] = None
     content: str
     section_code: str
     section_title: str
