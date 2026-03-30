@@ -71,7 +71,7 @@ export default function SideBar({
                 alt=""
                 width={500}
                 height={500}
-                className="size-24 shrink-0"
+                className="size-32 shrink-0"
                 decoding="async"
               />
             </span>

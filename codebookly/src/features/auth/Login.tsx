@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Library } from "lucide-react";
+import { CODEBOOKLY_ICON_SRC } from "../../branding";
 import { isSupabaseConfigured, supabase } from "../../lib/supabase";
 
 const Login = () => {
@@ -13,7 +13,7 @@ const Login = () => {
     setError(null);
     if (!isSupabaseConfigured()) {
       setError(
-        "Supabase is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in .env"
+        "Supabase is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in .env",
       );
       return;
     }
@@ -35,9 +35,16 @@ const Login = () => {
     <div className="min-h-screen flex items-center justify-center bg-[var(--bg)] px-4">
       <div className="w-full max-w-md rounded-xl border border-[var(--border)] bg-[var(--bg)] p-8 shadow-sm">
         <div className="mb-8 flex flex-col items-center gap-3 text-center">
-          <Library size={48} className="text-blue-500" aria-hidden />
+          <img
+            src={CODEBOOKLY_ICON_SRC}
+            alt="Codebookly"
+            width={250}
+            height={250}
+            className="text-primary"
+            decoding="async"
+          />
           <h1 className="text-2xl font-black text-[var(--text-h)] m-0">
-            Codebookly
+            Codebookly Admin
           </h1>
           <p className="text-sm text-[var(--text)] m-0">
             Sign in with your account

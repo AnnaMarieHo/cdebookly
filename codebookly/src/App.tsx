@@ -1,6 +1,4 @@
 import "./App.css";
-// import { CODEBOOKLY_ICON_SRC } from "./branding";
-import { Library } from "lucide-react";
 import Login from "./features/auth/Login";
 import { useAuth } from "./features/auth/AuthContext";
 import { CodeListSection } from "./features/codes/components/CodeListSection";
@@ -51,11 +49,11 @@ function AuthenticatedApp({ signOut }: AuthenticatedAppProps) {
         <main className="max-w-[1600px] mx-auto px-4 py-6 sm:px-6 md:px-10 md:py-10 lg:px-12 lg:py-12">
           <header className="mb-12 flex flex-wrap items-center justify-between gap-4 md:gap-5">
             <div className="flex flex-wrap items-center gap-4 md:gap-5 min-w-0">
-              <Library size={60} className="text-primary" />
+              {/* <Library size={60} className="text-blue-500" />
 
               <h1 className="text-3xl md:text-3xl font-black text-[var(--text-h)] m-0">
                 Codebookly Admin
-              </h1>
+              </h1> */}
             </div>
             <button
               type="button"
