@@ -45,11 +45,11 @@ export const DefinitionsSearchForm = memo(function DefinitionsSearchForm({
           autoComplete="off"
         />
       </div>
-      <div className="flex flex-wrap items-center gap-2 shrink-0">
+      <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2 shrink-0 w-full sm:w-auto">
         <button
           type="submit"
           disabled={loading}
-          className="inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold border border-[var(--primary)] text-[var(--primary)] hover:bg-[var(--surface-hover)]/50 disabled:opacity-50 disabled:pointer-events-none"
+          className="inline-flex w-full sm:w-auto flex-1 sm:flex-initial justify-center items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold border border-[var(--primary)] text-[var(--primary)] hover:bg-[var(--surface-hover)]/50 disabled:opacity-50 disabled:pointer-events-none min-h-[44px]"
         >
           {loading ? (
             <Loader2 size={16} className="animate-spin" aria-hidden />
@@ -62,7 +62,7 @@ export const DefinitionsSearchForm = memo(function DefinitionsSearchForm({
           type="button"
           onClick={() => void onExport()}
           disabled={exportBusy || loading || !hasResults}
-          className="inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold bg-[var(--primary)] text-white hover:opacity-90 disabled:opacity-50 disabled:pointer-events-none"
+          className="inline-flex w-full sm:w-auto flex-1 sm:flex-initial justify-center items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold bg-[var(--primary)] text-white hover:opacity-90 disabled:opacity-50 disabled:pointer-events-none min-h-[44px]"
         >
           {exportBusy ? (
             <Loader2 size={16} className="animate-spin" aria-hidden />

@@ -38,4 +38,5 @@ class CodeService:
         result = await session.execute(query)
         return result.scalars().all()
 
+
 code_service = CodeService()
