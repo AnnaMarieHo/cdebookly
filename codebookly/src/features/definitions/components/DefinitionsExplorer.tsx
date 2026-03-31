@@ -21,7 +21,7 @@ export function DefinitionsExplorer() {
         <div>
           <h2
             id="definitions-heading"
-            className="text-2xl md:text-3xl font-black text-[var(--text-h)] m-0 flex items-center gap-2"
+            className="text-xl sm:text-2xl md:text-3xl font-black text-[var(--text-h)] m-0 flex items-center gap-2"
           >
             {/* <BookOpen
               className="shrink-0 text-[var(--primary)]"
@@ -30,10 +30,10 @@ export function DefinitionsExplorer() {
             /> */}
             Definitions
           </h2>
-          <p className="text-sm text-[var(--text-muted)] mt-2 mb-0 max-w-2xl">
+          <p className="text-sm text-[var(--text-muted)] mt-2 mb-0 max-w-2xl break-words">
             The first page loads automatically so you can browse. Use Search to
             run a server query over terms, definitions, and committee text (
-            <code className="text-[var(--text-main)]">
+            <code className="text-[var(--text-main)] break-all text-xs sm:text-sm">
               GET /api/definitions?q=…
             </code>
             ). Pagination keeps the same query. Download matches the results you

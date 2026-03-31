@@ -1,10 +1,13 @@
+import { useMemo } from "react";
 import "./App.css";
 import Login from "./features/auth/Login";
 import { useAuth } from "./features/auth/AuthContext";
 import { CodeListSection } from "./features/codes/components/CodeListSection";
+import { useCodeListSelection } from "./features/codes/hooks/useCodeListSelection";
 import { DefinitionsExplorer } from "./features/definitions/components/DefinitionsExplorer";
 import { SectionChapterBanner } from "./features/layout/SectionChapterBanner";
 import SideBar from "./features/layout/SideBar";
+import { ChatBot } from "./features/chatbot/components/ChatBot";
 import { useCodebookApp } from "./hooks/useCodebookApp";
 
 type AuthenticatedAppProps = {
@@ -29,6 +32,12 @@ function AuthenticatedApp({ signOut }: AuthenticatedAppProps) {
     handleDesignationSelect,
     handleAgencySelect,
   } = useCodebookApp();
+
+  const codeSelection = useCodeListSelection(codes);
+  const selectedCodeIds = useMemo(
+    () => Array.from(codeSelection.selected),
+    [codeSelection.selected],
+  );
 
   return (
     <div className="flex min-h-screen bg-[var(--bg)]">
@@ -81,7 +90,12 @@ function AuthenticatedApp({ signOut }: AuthenticatedAppProps) {
               {agencyMeta ? (
                 <SectionChapterBanner meta={agencyMeta} contextLabel="Agency" />
               ) : null}
-              <CodeListSection codes={codes} loading={codesAreaLoading} />
+              <CodeListSection
+                codes={codes}
+                loading={codesAreaLoading}
+                selection={codeSelection}
+              />
+              <ChatBot selectedCodeIds={selectedCodeIds} />
             </>
           )}
         </main>

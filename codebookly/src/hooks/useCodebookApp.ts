@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { codeService } from "../services/codeApi";
+import { codeService } from "../services/codeService";
 import type {
   Agency,
   CodeRecord,

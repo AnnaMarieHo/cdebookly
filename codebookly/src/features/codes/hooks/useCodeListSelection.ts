@@ -1,7 +1,20 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CodeRecord } from "../../../types/codebook";
 
-export function useCodeListSelection(items: CodeRecord[]) {
+export type CodeListSelectionState = {
+  selected: Set<string>;
+  selectedCount: number;
+  clear: () => void;
+  selectAllVisible: () => void;
+  handleCheckboxClick: (
+    e: React.MouseEvent<HTMLInputElement>,
+    index: number,
+    id: string,
+  ) => void;
+  selectedRecords: CodeRecord[];
+};
+
+export function useCodeListSelection(items: CodeRecord[]): CodeListSelectionState {
   const orderedIds = useMemo(() => items.map((c) => c.code), [items]);
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
   const lastIndexRef = useRef<number | null>(null);

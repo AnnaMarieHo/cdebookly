@@ -2,15 +2,21 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware  
 from contextlib import asynccontextmanager
+from dotenv import load_dotenv
 from sqlalchemy.ext.asyncio import create_async_engine
 from app.api.routes import (
     codes, chapters, agencies, definitions, 
-    comittee_designations, index, sections
+    comittee_designations, index, sections, chatbot
 )
 import logging
 import os
+from pathlib import Path
 
 log = logging.getLogger(__name__)
+
+_root = Path(__file__).resolve().parent.parent
+load_dotenv(_root / ".env")
+load_dotenv()
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 # DATABASE_URL = "sqlite+aiosqlite:///./codebookly_testing.db"
@@ -58,6 +64,7 @@ app.include_router(comittee_designations.router)
 app.include_router(definitions.router)  
 app.include_router(index.router)
 app.include_router(sections.router)
+app.include_router(chatbot.router)
 
 @app.get("/health")
 def health_check():
