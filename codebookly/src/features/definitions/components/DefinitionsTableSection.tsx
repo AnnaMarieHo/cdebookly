@@ -1,7 +1,7 @@
 import { memo, useMemo } from "react";
 import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import type { DefinitionPageResponse } from "../../../types/definitions";
-import { DefinitionRow } from "./DefinitionRow";
+import { DefinitionCard, DefinitionRow } from "./DefinitionRow";
 
 type Props = {
   data: DefinitionPageResponse | null;
@@ -29,12 +29,23 @@ export const DefinitionsTableSection = memo(function DefinitionsTableSection({
     [data],
   );
 
+  const cardList = useMemo(
+    () =>
+      data?.items.map((row, i) => (
+        <DefinitionCard
+          key={`card-${data.page}-${i}-${row.term}-${row.letter_tag}`}
+          row={row}
+        />
+      )),
+    [data],
+  );
+
   return (
     <>
-      <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-[var(--text-muted)] min-h-[1.5rem]">
-        <span>{rangeLabel}</span>
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between text-sm text-[var(--text-muted)] min-h-[1.5rem]">
+        <span className="break-words">{rangeLabel}</span>
         {data && data.total_pages > 1 && (
-          <div className="flex items-center gap-1">
+          <div className="flex items-center justify-center gap-1 sm:justify-end self-stretch sm:self-auto">
             <button
               type="button"
               disabled={data.page <= 1 || loading}
@@ -76,16 +87,19 @@ export const DefinitionsTableSection = memo(function DefinitionsTableSection({
             <Loader2 className="animate-spin text-[var(--primary)]" size={32} />
           </div>
         )}
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[640px] border-collapse text-left">
+        <div className="sm:hidden space-y-3 p-3">{cardList}</div>
+        <div className="hidden sm:block overflow-x-auto">
+          <table className="w-full min-w-[36rem] lg:min-w-0 border-collapse text-left">
             <thead>
               <tr className="bg-[var(--surface-subtle)] text-[var(--text-muted)] text-[0.65rem] md:text-xs uppercase tracking-wide">
-                <th className="py-2.5 px-2 md:px-3 font-semibold">Term</th>
-                <th className="py-2.5 px-2 md:px-3 font-semibold">Tag</th>
-                <th className="py-2.5 px-2 md:px-3 font-semibold hidden sm:table-cell">
+                <th className="py-2.5 px-2 md:px-3 font-semibold w-[12%]">
+                  Term
+                </th>
+                <th className="py-2.5 px-2 md:px-3 font-semibold w-[8%]">Tag</th>
+                <th className="py-2.5 px-2 md:px-3 font-semibold w-[18%] hidden sm:table-cell">
                   Committee
                 </th>
-                <th className="py-2.5 px-2 md:px-3 font-semibold">
+                <th className="py-2.5 px-2 md:px-3 font-semibold min-w-0">
                   Definition
                 </th>
               </tr>
@@ -94,7 +108,7 @@ export const DefinitionsTableSection = memo(function DefinitionsTableSection({
           </table>
         </div>
         {!loading && data && data.items.length === 0 && (
-          <p className="text-sm text-[var(--text-muted)] p-8 text-center m-0">
+          <p className="text-sm text-[var(--text-muted)] p-6 sm:p-8 text-center m-0">
             No definitions match your search.
           </p>
         )}

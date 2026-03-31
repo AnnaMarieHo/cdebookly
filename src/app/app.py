@@ -2,28 +2,24 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware  
 from contextlib import asynccontextmanager
+from dotenv import load_dotenv
 from sqlalchemy.ext.asyncio import create_async_engine
 from app.api.routes import (
     codes, chapters, agencies, definitions, 
-    comittee_designations, index, sections
+    comittee_designations, index, sections, chatbot
 )
 import logging
 import os
+from pathlib import Path
 
 log = logging.getLogger(__name__)
 
+_root = Path(__file__).resolve().parent.parent
+load_dotenv(_root / ".env")
+load_dotenv()
+
 DATABASE_URL = os.getenv("DATABASE_URL")
 # DATABASE_URL = "sqlite+aiosqlite:///./codebookly_testing.db"
-
-# if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
-#     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+asyncpg://", 1)
-
-# if not DATABASE_URL:
-#     log.warning("DATABASE_URL not found. Database features will be unavailable.")
-# else:
-#     if DATABASE_URL.startswith("postgres://"):
-#         # DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+asyncpg://", 1)
-#         DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+psycopg://", 1)
 
 if DATABASE_URL:
     # Standardize the prefix for SQLAlchemy + Psycopg (Async)
@@ -52,6 +48,9 @@ app.add_middleware(
         "http://127.0.0.1:5173",
         "http://127.0.0.1:5173/",
         "https://cdebookly.onrender.com",
+        "https://cdebookly.vercel.app", # Main URL
+        "https://cdebookly-git-main-annas-projects-d3515f19.vercel.app", # Git URL
+        "https://cdebookly-bv7zq7uje-annas-projects-d3515f19.vercel.app", # Deployment URL
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -65,6 +64,7 @@ app.include_router(comittee_designations.router)
 app.include_router(definitions.router)  
 app.include_router(index.router)
 app.include_router(sections.router)
+app.include_router(chatbot.router)
 
 @app.get("/health")
 def health_check():

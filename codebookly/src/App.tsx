@@ -1,10 +1,13 @@
+import { useMemo } from "react";
 import "./App.css";
 import Login from "./features/auth/Login";
 import { useAuth } from "./features/auth/AuthContext";
 import { CodeListSection } from "./features/codes/components/CodeListSection";
+import { useCodeListSelection } from "./features/codes/hooks/useCodeListSelection";
 import { DefinitionsExplorer } from "./features/definitions/components/DefinitionsExplorer";
 import { SectionChapterBanner } from "./features/layout/SectionChapterBanner";
 import SideBar from "./features/layout/SideBar";
+import { ChatBot } from "./features/chatbot/components/ChatBot";
 import { useCodebookApp } from "./hooks/useCodebookApp";
 
 type AuthenticatedAppProps = {
@@ -30,6 +33,12 @@ function AuthenticatedApp({ signOut }: AuthenticatedAppProps) {
     handleAgencySelect,
   } = useCodebookApp();
 
+  const codeSelection = useCodeListSelection(codes);
+  const selectedCodeIds = useMemo(
+    () => Array.from(codeSelection.selected),
+    [codeSelection.selected],
+  );
+
   return (
     <div className="flex min-h-screen bg-[var(--bg)]">
       <SideBar
@@ -47,6 +56,7 @@ function AuthenticatedApp({ signOut }: AuthenticatedAppProps) {
 
       <div className="flex-1 ml-20 md:ml-72">
         <main className="max-w-[1600px] mx-auto px-4 py-6 sm:px-6 md:px-10 md:py-10 lg:px-12 lg:py-12">
+          {/* <main className="max-w-[90%] mx-auto px-4 py-6 sm:px-6 md:px-10 md:py-10 lg:px-12 lg:py-12"> */}
           <header className="mb-12 flex flex-wrap items-center justify-between gap-4 md:gap-5">
             <div className="flex flex-wrap items-center gap-4 md:gap-5 min-w-0">
               {/* <Library size={60} className="text-blue-500" />
@@ -80,7 +90,12 @@ function AuthenticatedApp({ signOut }: AuthenticatedAppProps) {
               {agencyMeta ? (
                 <SectionChapterBanner meta={agencyMeta} contextLabel="Agency" />
               ) : null}
-              <CodeListSection codes={codes} loading={codesAreaLoading} />
+              <CodeListSection
+                codes={codes}
+                loading={codesAreaLoading}
+                selection={codeSelection}
+              />
+              <ChatBot selectedCodeIds={selectedCodeIds} />
             </>
           )}
         </main>

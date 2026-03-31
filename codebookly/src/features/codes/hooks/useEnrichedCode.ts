@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { codeService } from "../../../services/codeApi";
+import { codeService } from "../../../services/codeService";
 import type { EnrichedCode } from "../../../types/codebook";
 import { singleCodeResponseToEnriched } from "../utils/singleCodeToEnriched";
 

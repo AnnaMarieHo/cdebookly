@@ -4,7 +4,7 @@ import type { CodeRecord } from "../../../types/codebook";
 import CodeCard from "./CodeCard";
 import { CodeFullContextModal } from "./CodeFullContextModal";
 import { SelectionActionBar } from "./SelectionActionBar";
-import { useCodeListSelection } from "../hooks/useCodeListSelection";
+import type { CodeListSelectionState } from "../hooks/useCodeListSelection";
 import { downloadCodesJson } from "../utils/exportCodesJson";
 import { downloadEnrichedJson } from "../utils/exportEnrichedJson";
 import { fetchEnrichedForExport } from "../utils/fetchEnrichedForExport";
@@ -13,9 +13,10 @@ type Props = {
   codes: CodeRecord[];
   /** True while initial shell fetch or a browse navigation (section/chapter/etc.) is in flight */
   loading?: boolean;
+  selection: CodeListSelectionState;
 };
 
-export function CodeListSection({ codes, loading = false }: Props) {
+export function CodeListSection({ codes, loading = false, selection }: Props) {
   const [detailCode, setDetailCode] = useState<string | null>(null);
   const [enrichedDownloadBusy, setEnrichedDownloadBusy] = useState(false);
 
@@ -26,7 +27,7 @@ export function CodeListSection({ codes, loading = false }: Props) {
     selectAllVisible,
     handleCheckboxClick,
     selectedRecords,
-  } = useCodeListSelection(codes);
+  } = selection;
 
   const handleOpenDetail = useCallback((code: string) => {
     setDetailCode(code);
@@ -90,7 +91,8 @@ export function CodeListSection({ codes, loading = false }: Props) {
           each).
         </p>
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {/* <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 max-w-[80%]"> */}
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 ">
           {codes.map((code, index) => (
             <CodeCard
               key={code.code}

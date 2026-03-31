@@ -1,6 +1,6 @@
 from typing import Optional
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 # Code Schemas
 
@@ -130,3 +130,13 @@ class EnrichedCode(BaseModel):
     standards: list[dict]
     committee_designations: list[CommitteeDesignation]
     index_terms: list[IndexReference]
+
+class ChatbotRequest(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    message: str
+    selected_code_ids: list[str] = Field(default_factory=list)
+
+
+class ChatbotResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    message: str

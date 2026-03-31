@@ -1,4 +1,4 @@
-import { codeService } from "../../../services/codeApi";
+import { codeService } from "../../../services/codeService";
 import type { EnrichedCode } from "../../../types/codebook";
 
 const DEFAULT_CONCURRENCY = 4;
