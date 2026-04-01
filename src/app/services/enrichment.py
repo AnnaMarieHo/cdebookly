@@ -15,7 +15,7 @@ class EnrichmentService:
         self.logger = logging.getLogger(__name__)
 
     async def enrich_code(self, session: AsyncSession, code: str):
-        code_row, chapter_info = await code_service.get_code(session, code)
+        code_row, chapter_info = await code_service.get_code_with_ch_metadata(session, code)
         standards = await agency_service.get_standards_by_code(session, code)
         committee_designations = await committee_designation_service.get_committee_designations_by_code(session, code)
         index_terms = await index_service.get_terms_by_code(session, code)
