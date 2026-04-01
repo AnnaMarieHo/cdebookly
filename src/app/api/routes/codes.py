@@ -22,7 +22,7 @@ async def root(
 
 
 @router.get("/code/{code}")
-async def get_code(
+async def get_code_with_ch_metadata(
     code: str,
     session: AsyncSession = Depends(get_async_session)
 ):
