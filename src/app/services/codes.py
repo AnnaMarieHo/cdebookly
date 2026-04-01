@@ -16,7 +16,7 @@ class CodeService:
         result = await session.execute(query)
         return result.scalars().all()
 
-    async def get_code(self, session: AsyncSession, code: str):
+    async def get_code_with_ch_metadata(self, session: AsyncSession, code: str):
         query = select(CodesTable).where(CodesTable.code == code)
         result = await session.execute(query)
 
