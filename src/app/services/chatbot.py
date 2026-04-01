@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import re
 from typing import Any
 
 import httpx
@@ -9,14 +10,20 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.schemas.schemas import (
     ChatbotRequest,
     CommitteeDesignation,
-    EnrichedCode,
+    # EnrichedCode,
+    ChatbotEnrichedCode,
     IndexReference,
 )
 from app.services.enrichment import enrichment_service
 from app.services.chapter import chapter_service
 
-OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
-DEFAULT_MODEL = "nvidia/nemotron-3-super-120b-a12b:free"
+HF_URL = "https://router.huggingface.co/v1/chat/completions"
+
+# HF_MODEL = "deepseek-ai/DeepSeek-R1-Distill-Llama-8B"
+HF_MODEL = "meta-llama/Llama-3.3-70B-Instruct"
+# HF_API_KEY = env.get("HF_API_KEY")
+# OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
+# DEFAULT_MODEL = "nvidia/nemotron-3-super-120b-a12b:free"
 
 QUIZ_PROMPT = """You are a study assistant for the international plumbing codebook.
 
@@ -38,10 +45,12 @@ When the user asks to paraphrase or rewrite "this code" with context:
 
 respond helpfully and concisely in Markdown (headings, lists, bold for key terms).
 You are a plumbing code expert. 
-For each code provided, provide a plain-language paraphrase.
+For each code provided, provide a natural-language paraphrase.
+
+STYLE RULE: Use 'Simplified Technical English.' Break complex regulatory sentences into two or more short, direct sentences. Use active verbs (e.g., 'The official issues' instead of 'An annual permit can be issued'). Avoid preamble.
 
 FORMATTING RULES:
-1. Use a Markdown table with two columns: 'Code' and 'Plain-Language Summary'.
+1. Use a Markdown table with two columns: 'Code' and 'Natural-Language Summary'.
 2. Use bold text for the code numbers.
 3. Ensure each row is distinct so the UI renders clear lines between them.
 """
@@ -78,7 +87,7 @@ async def _enrichment_entry_for_code(session: AsyncSession, code: str) -> dict[s
         }
         for standard in standards if standard
     ]
-    enriched = EnrichedCode.model_validate(
+    enriched = ChatbotEnrichedCode.model_validate(
         {
             "code": code_info_list,
             "standards": standards_list,
@@ -88,7 +97,6 @@ async def _enrichment_entry_for_code(session: AsyncSession, code: str) -> dict[s
             "index_terms": [IndexReference.model_validate(row) for row in index_terms],
         }
     )
-
 
     cleaned_data = enriched.model_dump(mode="json", exclude_none=True, exclude_unset=True, exclude_defaults=True)
     # out: dict[str, Any] = {"found": True, **enriched.model_dump(mode="json", exclude_none=True)}
@@ -112,8 +120,12 @@ def _extract_message_content(data: dict[str, Any]) -> str | None:
     if not isinstance(msg, dict):
         return None
     content = msg.get("content")
+    # if isinstance(content, str) and content.strip():
+    #     return content.strip()
     if isinstance(content, str) and content.strip():
-        return content.strip()
+        # Remove everything between <think> and </think> inclusive
+        clean_content = re.sub(r'<think>.*?</think>', '', content, flags=re.DOTALL)
+        return clean_content.strip()
     return None
 
 
@@ -132,13 +144,16 @@ class ChatbotService:
         self.logger = logging.getLogger(__name__)
 
     async def handle(self, request: ChatbotRequest, session: AsyncSession) -> str:
-        api_key = (os.getenv("OPENROUTER_API_KEY") or "").strip()
+        # api_key = (os.getenv("OPENROUTER_API_KEY") or "").strip()
+        api_key = (os.getenv("HF_TOKEN") or "").strip()
         if not api_key:
             return (
-                "The chat assistant is not configured: set OPENROUTER_API_KEY in the "
-                "server environment (OpenRouter API key)."
+                "The chat assistant is not configured: set KEY in the "
+                "server environment."
             )
-        model = (os.getenv("OPENROUTER_MODEL") or DEFAULT_MODEL).strip()
+        # model = (os.getenv("OPENROUTER_MODEL") or DEFAULT_MODEL).strip()
+        model = (os.getenv("HF_MODEL") or HF_MODEL).strip()        
+        # model = "deepseek-ai/DeepSeek-R1-Distill-Llama-8B:nscale"     
         code_strings = list(dict.fromkeys(request.selected_code_ids))
         
         if code_strings:
@@ -158,15 +173,26 @@ class ChatbotService:
             context_obj = {"entries": entries, "chapter_info": chapter_info}
 
         context_block = json.dumps(context_obj, indent=2, ensure_ascii=False)
+        print(json.dumps(context_obj, indent=2, ensure_ascii=False))
         user_content = _build_user_content(request.message, context_block)        
         prompt = get_prompt(request.mode)
 
+        # payload = {
+        #     "model": model,
+        #     "messages": [
+        #         {"role": "system", "content": prompt},
+        #         {"role": "user", "content": user_content},
+        #     ],
+        # }
         payload = {
             "model": model,
             "messages": [
-                {"role": "system", "content": prompt},
-                {"role": "user", "content": user_content},
+                # NOTE: DeepSeek-R1 performs better with instructions in the User role
+                {"role": "user", "content": f"{prompt}\n\n{user_content}"},
             ],
+            "temperature": 0.6, # Recommended for DeepSeek-R1 to prevent repetition
+            "max_tokens": 2048,
+            "stream": False
         }
         print(json.dumps(payload, indent=2, ensure_ascii=False))
 
@@ -174,17 +200,22 @@ class ChatbotService:
             "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json",
         }
-        referer = os.getenv("OPENROUTER_HTTP_REFERER")
-        if referer:
-            headers["HTTP-Referer"] = referer
-        title = os.getenv("OPENROUTER_APP_TITLE", "Codebookly")
-        headers["X-OpenRouter-Title"] = title
+        # referer = os.getenv("OPENROUTER_HTTP_REFERER")
+        # if referer:
+        #     headers["HTTP-Referer"] = referer
+        # title = os.getenv("OPENROUTER_APP_TITLE", "Codebookly")
+        # headers["X-OpenRouter-Title"] = title
 
         try:
             async with httpx.AsyncClient(timeout=120.0) as client:
                 response = await client.post(
-                    OPENROUTER_URL, headers=headers, json=payload
+                    HF_URL,
+                    headers=headers, 
+                    json=payload
                 )
+                # response = await client.post(
+                #     OPENROUTER_URL, headers=headers, json=payload
+                # )
         except httpx.TimeoutException:
             self.logger.warning("OpenRouter request timed out")
             return "The model took too long to respond. Try a shorter message or fewer selected codes."
