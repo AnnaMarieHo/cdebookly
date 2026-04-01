@@ -10,7 +10,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.schemas.schemas import (
     ChatbotRequest,
     CommitteeDesignation,
-    # EnrichedCode,
     ChatbotEnrichedCode,
     IndexReference,
 )
