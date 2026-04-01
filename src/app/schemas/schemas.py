@@ -123,7 +123,7 @@ class Section(BaseModel):
     table: Optional[str] = None
 
 
-class EnrichedCode(BaseModel):
+class ChatbotEnrichedCode(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     code: Optional[dict] = None
     parent_code: Optional[str] = None
@@ -133,6 +133,15 @@ class EnrichedCode(BaseModel):
     standards: list[dict]
     committee_designations: list[CommitteeDesignation]
     index_terms: list[IndexReference]
+
+class EnrichedCode(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    code: Code
+    chapter_info: Optional[Chapter] = None
+    standards: list[dict]
+    committee_designations: list[CommitteeDesignation]
+    index_terms: list[IndexReference]
+
 
 class ChatbotRequest(BaseModel):
     model_config = ConfigDict(from_attributes=True)
