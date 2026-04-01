@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -125,7 +125,10 @@ class Section(BaseModel):
 
 class EnrichedCode(BaseModel):
     model_config = ConfigDict(from_attributes=True)
-    code: Code
+    code: Optional[dict] = None
+    parent_code: Optional[str] = None
+    section_title: Optional[str] = None
+    content: Optional[str] = None
     chapter_info: Optional[Chapter] = None
     standards: list[dict]
     committee_designations: list[CommitteeDesignation]
@@ -135,6 +138,7 @@ class ChatbotRequest(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     message: str
     selected_code_ids: list[str] = Field(default_factory=list)
+    mode: Literal["general", "quiz", "paraphrase"] = "general"
 
 
 class ChatbotResponse(BaseModel):

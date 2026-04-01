@@ -1,7 +1,7 @@
 from sqlalchemy import select, cast, Integer
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.models import Chapters
+from app.models.models import Chapters, CodesTable
 import logging
 
 class ChapterService:
@@ -32,5 +32,12 @@ class ChapterService:
             query = select(Chapters).where(Chapters.appendix == search.upper())
             result = await session.execute(query)
             return result.scalar_one_or_none(), "appendix"
+
+    async def get_chapter_by_code(self, session: AsyncSession, code: str):
+        query = select(Chapters, CodesTable).join(CodesTable, Chapters.chapter == CodesTable.chapter).where(CodesTable.code == code)
+        result = await session.execute(query)
+        chapter_row = result.scalar_one_or_none()
+        return_val = {"about": chapter_row.about, "description": chapter_row.description}
+        return return_val
 
 chapter_service = ChapterService()
