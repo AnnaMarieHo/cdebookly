@@ -1,15 +1,15 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   Download,
+  FileText,
   Maximize2,
   MessageCircle,
   SendHorizontal,
   X,
 } from "lucide-react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 import { chatService } from "../../../services/chatService";
 import { downloadChatMarkdown } from "../utils/downloadChatMarkdown";
+import AssistantMarkdown from "./AssistantMarkdown";
 
 type ChatBotProps = {
   /** Code IDs currently selected in the list (shared lifted state). */
@@ -20,7 +20,7 @@ type ChatMessage = {
   id: string;
   role: "user" | "assistant";
   text: string;
-  /** Assistant reply when >2 codes were selected: stub in thread; full text in modal. */
+  rawText?: string;
   assistantExpandedUi?: boolean;
 };
 
@@ -37,92 +37,6 @@ const assistantBubbleBase =
 const downloadIconButtonClass =
   "rounded-lg p-1.5 text-[var(--text-muted)] hover:bg-black/5 hover:text-[var(--text-main)] dark:hover:bg-white/10";
 
-function AssistantMarkdown({
-  text,
-  className,
-}: {
-  text: string;
-  /** Override wrapper; default is the compact chat bubble. */
-  className?: string;
-}) {
-  return (
-    <div className={className ?? assistantBubbleBase}>
-      <ReactMarkdown
-        remarkPlugins={[remarkGfm]}
-        components={{
-          p: ({ children }) => (
-            <p className="mb-2 last:mb-0 whitespace-normal">{children}</p>
-          ),
-          ul: ({ children }) => (
-            <ul className="mb-2 list-disc pl-4 last:mb-0">{children}</ul>
-          ),
-          ol: ({ children }) => (
-            <ol className="mb-2 list-decimal pl-4 last:mb-0">{children}</ol>
-          ),
-          li: ({ children }) => <li className="mb-0.5">{children}</li>,
-          h1: ({ children }) => (
-            <h3 className="mb-1 mt-3 text-base font-semibold first:mt-0">
-              {children}
-            </h3>
-          ),
-          h2: ({ children }) => (
-            <h3 className="mb-1 mt-3 text-base font-semibold first:mt-0">
-              {children}
-            </h3>
-          ),
-          h3: ({ children }) => (
-            <h4 className="mb-1 mt-2 text-sm font-semibold first:mt-0">
-              {children}
-            </h4>
-          ),
-          h4: ({ children }) => (
-            <h4 className="mb-1 mt-2 text-sm font-semibold first:mt-0">
-              {children}
-            </h4>
-          ),
-          strong: ({ children }) => (
-            <strong className="font-semibold">{children}</strong>
-          ),
-          hr: () => <hr className="my-2 border-[var(--border)]" />,
-          code: ({ className, children }) => {
-            const inline = !className;
-            if (inline) {
-              return (
-                <code className="rounded bg-black/15 px-1 py-0.5 font-mono text-[0.85em] dark:bg-white/20">
-                  {children}
-                </code>
-              );
-            }
-            return <code className={className}>{children}</code>;
-          },
-          pre: ({ children }) => (
-            <pre className="mb-2 overflow-x-auto rounded-lg bg-black/15 p-2 text-xs dark:bg-black/40">
-              {children}
-            </pre>
-          ),
-          blockquote: ({ children }) => (
-            <blockquote className="mb-2 border-l-2 border-[var(--primary)] pl-2 text-[var(--text-muted)]">
-              {children}
-            </blockquote>
-          ),
-          a: ({ href, children }) => (
-            <a
-              href={href}
-              className="text-[var(--primary)] underline underline-offset-2"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              {children}
-            </a>
-          ),
-        }}
-      >
-        {text}
-      </ReactMarkdown>
-    </div>
-  );
-}
-
 export function ChatBot({ selectedCodeIds }: ChatBotProps) {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -131,18 +45,33 @@ export function ChatBot({ selectedCodeIds }: ChatBotProps) {
   const [responseModalText, setResponseModalText] = useState<string | null>(
     null,
   );
+  const [mode, setMode] = useState<"general" | "quiz" | "paraphrase">(
+    "general",
+  );
   const transcriptEndRef = useRef<HTMLDivElement | null>(null);
   const responseModalCloseRef = useRef<HTMLButtonElement | null>(null);
 
-  useEffect(() => {
-    if (responseModalText === null) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setResponseModalText(null);
-    };
-    window.addEventListener("keydown", onKey);
-    queueMicrotask(() => responseModalCloseRef.current?.focus());
-    return () => window.removeEventListener("keydown", onKey);
-  }, [responseModalText]);
+  const modePrompts = {
+    general: (
+      <>
+        Ask for more information about a specific code: &quot;What's the role of
+        the committee designation in code 101.2?&quot;
+      </>
+    ),
+    quiz: (
+      <>
+        Specify quiz parameters or a topic focus — for example: &quot;Generate a
+        5-question multiple choice quiz&quot; or &quot;Focus on Pipe
+        Sizing&quot;.
+      </>
+    ),
+    paraphrase: (
+      <>
+        Select a group of codes and press send for a batch of paraphrased
+        responses.
+      </>
+    ),
+  };
 
   const sortedIds = useMemo(
     () => [...selectedCodeIds].sort((a, b) => a.localeCompare(b)),
@@ -151,28 +80,49 @@ export function ChatBot({ selectedCodeIds }: ChatBotProps) {
 
   const sendMessage = async () => {
     const text = draft.trim();
-    if (!text || sending) return;
+    if (!text && mode !== "paraphrase") return;
+    if (sending) return;
+
+    const finalPrompt = text || "Please paraphrase the selected codes";
+
     const codeCountAtSend = selectedCodeIds.length;
-    const useResponseModal = codeCountAtSend > 2;
-    setMessages((prev) => [...prev, { id: nextId(), role: "user", text }]);
+    const useResponseModal = codeCountAtSend > 2 || mode === "paraphrase";
+
+    setMessages((prev) => [
+      ...prev,
+      { id: nextId(), role: "user", text: finalPrompt },
+    ]);
     setDraft("");
     setSending(true);
     queueMicrotask(() =>
       transcriptEndRef.current?.scrollIntoView({ behavior: "smooth" }),
     );
     try {
-      const response = await chatService.sendMessage(text, selectedCodeIds);
+      const response = await chatService.sendMessage(
+        finalPrompt,
+        selectedCodeIds,
+        mode,
+      );
+      let finalMessage = response.message;
+      if (finalMessage.includes("DEBUG_RAW_DATA:")) {
+        finalMessage =
+          "### Raw API Recieved:\n```json\n" +
+          finalMessage.replace("DEBUG_RAW_DATA: ", "") +
+          "\n```";
+      }
+
       setMessages((prev) => [
         ...prev,
         {
           id: nextId(),
           role: "assistant",
-          text: response.message,
+          text: finalMessage,
           assistantExpandedUi: useResponseModal,
         },
       ]);
+
       if (useResponseModal) {
-        setResponseModalText(response.message);
+        setResponseModalText(finalMessage);
       }
     } catch {
       setMessages((prev) => [
@@ -195,6 +145,11 @@ export function ChatBot({ selectedCodeIds }: ChatBotProps) {
         transcriptEndRef.current?.scrollIntoView({ behavior: "smooth" }),
       );
     }
+  };
+
+  const handleModeChange = (mode: "quiz" | "paraphrase") => {
+    setMode((prevMode) => (prevMode === mode ? "general" : mode));
+    console.log("mode", mode);
   };
 
   const modalMarkdownClass =
@@ -267,6 +222,23 @@ export function ChatBot({ selectedCodeIds }: ChatBotProps) {
             </h2>
             <button
               type="button"
+              onClick={() => handleModeChange("paraphrase")}
+              className={`rounded-lg p-1.5 ${mode === "paraphrase" ? "bg-[var(--primary)] text-white" : "bg-transparent text-[var(--text-muted)]"} hover:border-slate-300 border border-transparent `}
+              aria-label="Paraphrase mode"
+            >
+              Paraphrase
+            </button>
+            <button
+              type="button"
+              onClick={() => handleModeChange("quiz")}
+              className={`rounded-lg p-1.5 ${mode === "quiz" ? "bg-[var(--primary)] text-white" : "bg-transparent text-[var(--text-muted)]"} hover:border-slate-300 border border-transparent `}
+              aria-label="Quiz mode"
+            >
+              Quiz
+            </button>
+
+            <button
+              type="button"
               onClick={() => setOpen(false)}
               className="rounded-lg p-1.5 text-[var(--text-muted)] hover:bg-black/5 hover:text-[var(--text-main)] dark:hover:bg-white/10"
               aria-label="Close chat"
@@ -297,10 +269,7 @@ export function ChatBot({ selectedCodeIds }: ChatBotProps) {
             <div className="min-h-[5.5rem] flex-1 overflow-y-auto px-4 py-3">
               {messages.length === 0 ? (
                 <p className="m-0 text-sm text-[var(--text-muted)]">
-                  Ask for a quiz, a paraphrase, or anything else about the codes
-                  you select — for example: &quot;Generate a 5-question multiple
-                  choice quiz&quot; or &quot;Paraphrase this code given the
-                  context&quot;.
+                  {modePrompts[mode]}
                 </p>
               ) : (
                 <ul className="m-0 flex list-none flex-col gap-2 p-0">
@@ -393,28 +362,43 @@ export function ChatBot({ selectedCodeIds }: ChatBotProps) {
                 Message
               </label>
               <div className="flex gap-2">
-                <textarea
-                  id="chatbot-message"
-                  value={draft}
-                  onChange={(e) => setDraft(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey) {
-                      e.preventDefault();
-                      sendMessage();
-                    }
-                  }}
-                  rows={2}
-                  placeholder="Write a message…"
-                  className="min-h-[2.75rem] flex-1 resize-none rounded-xl border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-sm text-[var(--text-main)] placeholder:text-[var(--text-muted)] focus:border-[var(--primary)] focus:outline-none focus:ring-1 focus:ring-[var(--primary)]"
-                />
-                <button
-                  type="submit"
-                  disabled={!draft.trim() || sending}
-                  className="flex shrink-0 items-center justify-center rounded-xl p-2.5 text-white disabled:cursor-not-allowed disabled:opacity-40 hover:brightness-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-card)]"
-                  aria-label="Send message"
-                >
-                  <SendHorizontal size={20} aria-hidden />
-                </button>
+                {mode === "paraphrase" ? (
+                  <button
+                    type="button"
+                    disabled={selectedCodeIds.length === 0 || sending}
+                    onClick={() => sendMessage()}
+                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--primary)] py-3 text-sm font-semibold text-white hover:brightness-110 disabled:opacity-50"
+                  >
+                    <FileText size={18} />
+                    Paraphrase {selectedCodeIds.length} Selected Codes
+                  </button>
+                ) : (
+                  <>
+                    <textarea
+                      id="chatbot-message"
+                      value={draft}
+                      onChange={(e) => setDraft(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !e.shiftKey) {
+                          e.preventDefault();
+                          sendMessage();
+                        }
+                      }}
+                      rows={2}
+                      disabled={sending}
+                      placeholder={"Write a message…"}
+                      className={`min-h-[2.75rem] flex-1 resize-none rounded-xl border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-sm text-[var(--text-main)] placeholder:text-[var(--text-muted)] focus:border-[var(--primary)] focus:outline-none focus:ring-1 focus:ring-[var(--primary)]`}
+                    />
+                    <button
+                      type="submit"
+                      disabled={!draft.trim() || sending}
+                      className="flex shrink-0 items-center justify-center rounded-xl p-2.5 text-white disabled:cursor-not-allowed disabled:opacity-40 hover:brightness-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-card)]"
+                      aria-label="Send message"
+                    >
+                      <SendHorizontal size={20} aria-hidden />
+                    </button>
+                  </>
+                )}
               </div>
             </form>
           </div>
