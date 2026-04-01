@@ -22,11 +22,11 @@ async def root(
 
 
 @router.get("/code/{code}")
-async def get_code_with_ch_metadata(
+async def get_code(
     code: str,
     session: AsyncSession = Depends(get_async_session)
 ):
-    code_row, chapter_info = await code_service.get_code(session, code)
+    code_row, chapter_info = await code_service.get_code_with_ch_metadata(session, code)
     if not code_row:
         raise HTTPException(status_code=404, detail="Code not found")
     return {
