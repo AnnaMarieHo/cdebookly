@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 import os
@@ -22,6 +23,7 @@ from app.services.chapter import chapter_service
 # HF_MODEL = "meta-llama/Llama-3.3-70B-Instruct"
 # HF_API_KEY = env.get("HF_API_KEY")
 OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
+# DEFAULT_MODEL = "nvidia/nemotron-3-super-120b-a12b:free"
 DEFAULT_MODEL = "nvidia/nemotron-3-super-120b-a12b:free"
 
 QUIZ_PROMPT = """You are a study assistant for the international plumbing codebook.
@@ -35,23 +37,44 @@ respond helpfully and concisely in Markdown when structure helps (headings, list
 
 
 
-PARAPHRASE_PROMPT = """You are a study assistant for the international plumbing codebook.
+PARAPHRASE_PROMPT = """
+## ✏️ REWRITE MODE RULES
 
-The user message includes a section CODE CONTEXT: a JSON object with an "entries" array. Each entry is either full enriched codebook data (fields like code, chapter_info, standards, committee_designations, index_terms) or an object with "found": false and "requested_code" if that id was not in the database. Use that context when it helps answer. If "entries" is empty or no usable code text is present, briefly ask the user to select codes in the app first.
+### Copyright-Safe Rephrasing Rule
+The rewritten text must be structurally transformed. Do not mirror the original wording. Do not lightly paraphrase. Do not reuse distinctive sentence structure. You must:
+- Change sentence flow
+- Reorganize clause structure where possible
+- Break compound sentences into clearer segments when appropriate
+- Rephrase governing verbs
+- Alter grammatical construction
+- Avoid matching rhythm or phrasing of the source
 
-When the user asks to paraphrase or rewrite "this code" with context:
-- Paraphrase the regulatory / technical meaning in plain language without changing requirements or dropping mandatory conditions. Keep defined terms recognizable.
+However: You must preserve 100 percent of the technical meaning and all enforceable requirements. If the rewrite is too close to the original, regenerate with different structure.
 
-respond helpfully and concisely in Markdown (headings, lists, bold for key terms).
-You are a plumbing code expert. 
-For each code provided, provide a natural-language paraphrase.
+### Structural Integrity Rule
+Maintain the original logical relationships. Do not change hierarchy of requirements. Do not alter conditional relationships. Do not reinterpret intent. Do not explain rationale. You may rewrite wording but not restructure meaning.
 
-STYLE RULE: Use 'Simplified Technical English.' Break complex regulatory sentences into two or more short, direct sentences. Use active verbs (e.g., 'The official issues' instead of 'An annual permit can be issued'). Avoid preamble.
+### Simplified Version Rule
+The simplified_body must:
+- Be materially shorter than the rewritten body
+- Preserve all enforceable meaning
+- Preserve all numbers and standards
+- Use direct regulatory verbs (Require, Prohibit, Provide, Limit)
+- Not simply rephrase the body again
 
-FORMATTING RULES:
-1. Use a Markdown table with two columns: 'Code' and 'Natural-Language Summary'.
-2. Use bold text for the code numbers.
-3. Ensure each row is distinct so the UI renders clear lines between them.
+RULES:
+- Return a JSON object with a single key "rewrites" containing an array of objects.
+- Each object in the array MUST include: "id", "body", and "simplified_body".
+- "body": Structurally transformed, copyright-safe paraphrase using <br> for line breaks.
+- "simplified_body": Shorter, direct version using regulatory verbs.
+
+Example Output Format:
+{
+  "rewrites": [
+    {"id": "xxx.x...", "body": "...", "simplified_body": "..."},
+    ...
+  ]
+}
 """
 
 
@@ -63,7 +86,6 @@ respond helpfully and concisely in Markdown when structure helps (headings, list
 
 
 async def _enrichment_entry_for_code(session: AsyncSession, code: str) -> dict[str, Any]:
-    # print(f"Enriching code: {code}")
     code_row, chapter_info, standards, committee_designations, index_terms = (
         await enrichment_service.enrich_code(session, code)
     )
@@ -119,8 +141,7 @@ def _extract_message_content(data: dict[str, Any]) -> str | None:
     if not isinstance(msg, dict):
         return None
     content = msg.get("content")
-    # if isinstance(content, str) and content.strip():
-    #     return content.strip()
+
     if isinstance(content, str) and content.strip():
         # Remove everything between <think> and </think> inclusive
         clean_content = re.sub(r'<think>.*?</think>', '', content, flags=re.DOTALL)
@@ -130,121 +151,221 @@ def _extract_message_content(data: dict[str, Any]) -> str | None:
 
 def get_prompt(mode: str) -> str:
     if mode == "quiz":
-        print(QUIZ_PROMPT)
         return QUIZ_PROMPT
     elif mode == "paraphrase":
-        print(PARAPHRASE_PROMPT)
         return PARAPHRASE_PROMPT
     else:
         return GENERAL_PROMPT
+
+
+def _chapter_display_label(chapter_info: dict[str, Any] | None) -> str:
+    if not chapter_info:
+        return "Unknown"
+    return (
+        # chapter_info.get("description")
+        chapter_info.get("title")
+        or chapter_info.get("about")
+        or "Unknown"
+    )
+
 
 class ChatbotService:
     def __init__(self):
         self.logger = logging.getLogger(__name__)
 
+    async def _process_batch(
+        self,
+        client: httpx.AsyncClient,
+        chunk: list[dict[str, Any]],
+        chapter_info: dict[str, Any] | None,
+        prompt: str,
+        api_key: str,
+        model: str,
+    ) -> list[dict[str, Any]]:
+        """Worker: processes up to 6 codes with optional chapter context."""
+        chapter_context = ""
+        if chapter_info:
+            # desc = (chapter_info.get("description") or "").strip()
+            desc = (chapter_info.get("title") or "").strip()
+            # about = (chapter_info.get("about") or "").strip()
+            # line = " — ".join(p for p in (desc, about) if p)
+            line = desc
+            chapter_context = f"CHAPTER CONTEXT: {line}\n\n" if line else ""
+
+        batch_input: list[dict[str, Any]] = []
+        for e in chunk:
+            if "code" not in e:
+                continue
+            standards_str = ", ".join(
+                f"{s['standard_id']}: {s['definition']}"
+                for s in e.get("standards", [])
+                if isinstance(s, dict) and s.get("standard_id") is not None
+            )
+            batch_input.append(
+                {
+                    "id": e["code"]["code"],
+                    "title": e["code"]["section_title"],
+                    "content": e["code"]["content"],
+                    "referenced_standards": standards_str,
+                }
+            )
+
+        if not batch_input:
+            return []
+
+        full_system_prompt = f"{prompt}\n\n{chapter_context}".rstrip()
+
+        payload = {
+            "model": model,
+            "messages": [
+                {"role": "system", "content": full_system_prompt},
+                {"role": "user", "content": f"PROCESS THESE ENTRIES:\n{json.dumps(batch_input)}"},
+            ],
+            "response_format": {"type": "json_object"},
+            "temperature": 0.5,
+        }
+
+        headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
+
+        try:
+            response = await client.post(OPENROUTER_URL, headers=headers, json=payload)
+            response.raise_for_status()
+            raw_text = _extract_message_content(response.json())
+            if not raw_text:
+                return []
+            parsed = json.loads(raw_text)
+            return parsed.get("rewrites", []) if isinstance(parsed, dict) else []
+        except Exception as e:
+            self.logger.error("Batch failed: %s", e)
+            return []
+
+    async def _handle_paraphrase(
+        self,
+        request: ChatbotRequest,
+        session: AsyncSession,
+        api_key: str,
+        model: str,
+    ) -> str:
+        code_ids = list(dict.fromkeys(request.selected_code_ids))
+        chapter_info: dict[str, Any] | None = None
+        if code_ids:
+            chapter_info = await chapter_service.get_chapter_by_code(session, code_ids[0])
+
+        all_enriched_entries: list[dict[str, Any]] = []
+        for cid in code_ids:
+            all_enriched_entries.append(await _enrichment_entry_for_code(session, cid))
+
+        batch_size = 6
+        chunks = [
+            all_enriched_entries[i : i + batch_size]
+            for i in range(0, len(all_enriched_entries), batch_size)
+        ]
+        prompt = get_prompt("paraphrase")
+        chapter_label = _chapter_display_label(chapter_info)
+
+        async with httpx.AsyncClient(timeout=120.0) as client:
+            tasks = [
+                self._process_batch(client, chunk, chapter_info, prompt, api_key, model)
+                for chunk in chunks
+            ]
+            nested_results = await asyncio.gather(*tasks)
+
+        llm_rewrites = [item for sublist in nested_results for item in sublist]
+        rewrite_map: dict[str, Any] = {str(item["id"]): item for item in llm_rewrites if isinstance(item, dict) and "id" in item}
+
+        final_ui_data: list[dict[str, Any]] = []
+        for entry in all_enriched_entries:
+            if entry.get("found") is False:
+                cid = str(entry.get("requested_code", ""))
+                final_ui_data.append(
+                    {
+                        "code": cid,
+                        "chapter": chapter_label,
+                        "section_title": "Not found",
+                        "body": "",
+                        "simplified_body": "N/A",
+                        "standards": [],
+                        "found": False,
+                    }
+                )
+                continue
+
+            cid = str(entry["code"]["code"])
+            rw = rewrite_map.get(cid, {})
+            final_ui_data.append(
+                {
+                    "code": cid,
+                    "chapter": chapter_label,
+                    "section_title": entry["code"]["section_title"],
+                    "body": rw.get("body", entry["code"]["content"]),
+                    "simplified_body": rw.get("simplified_body", "Not required"),
+                    "standards": entry.get("standards", []),
+                    "found": True,
+                }
+            )
+
+        return json.dumps(final_ui_data)
+
+    async def _handle_chat_modes(
+        self,
+        request: ChatbotRequest,
+        session: AsyncSession,
+        api_key: str,
+        model: str,
+    ) -> str:
+        code_strings = list(dict.fromkeys(request.selected_code_ids))
+        chapter_info = None
+        if code_strings:
+            chapter_info = await chapter_service.get_chapter_by_code(session, code_strings[0])
+
+        entries: list[dict[str, Any]] = []
+        for code in code_strings:
+            entries.append(await _enrichment_entry_for_code(session, code))
+
+        context_obj: dict[str, Any] = {
+            "entries": entries,
+            "chapter_info": chapter_info,
+        }
+        if not code_strings:
+            context_obj["note"] = "No codes selected — no code text provided."
+
+        context_block = json.dumps(context_obj, default=str)
+        user_content = _build_user_content(request.message, context_block)
+        prompt = get_prompt(request.mode)
+
+        payload = {
+            "model": model,
+            "messages": [
+                {"role": "system", "content": prompt},
+                {"role": "user", "content": user_content},
+            ],
+            "temperature": 0.5,
+        }
+        headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
+
+        try:
+            async with httpx.AsyncClient(timeout=120.0) as client:
+                response = await client.post(OPENROUTER_URL, headers=headers, json=payload)
+                response.raise_for_status()
+                data = response.json()
+            raw = _extract_message_content(data)
+            return (raw or "").strip() or "No response from the model."
+        except Exception as e:
+            self.logger.error("Chat completion failed: %s", e)
+            return "The assistant could not complete this request. Try again later."
+
     async def handle(self, request: ChatbotRequest, session: AsyncSession) -> str:
         api_key = (os.getenv("OPENROUTER_API_KEY") or "").strip()
-        # api_key = (os.getenv("HF_TOKEN") or "").strip()
         if not api_key:
             return (
                 "The chat assistant is not configured: set KEY in the "
                 "server environment."
             )
         model = (os.getenv("OPENROUTER_MODEL") or DEFAULT_MODEL).strip()
-        # model = (os.getenv("HF_MODEL") or HF_MODEL).strip()        
-        # model = "deepseek-ai/DeepSeek-R1-Distill-Llama-8B:nscale"     
-        code_strings = list(dict.fromkeys(request.selected_code_ids))
-        
-        if code_strings:
-            chapter_info = await chapter_service.get_chapter_by_code(session, code_strings[0])
-        else:
-            chapter_info = None
 
-        if not code_strings:
-            context_obj: dict[str, Any] = {
-                "entries": [],
-                "note": "No codes selected — no code text provided.",
-            }
-        else:
-            entries: list[dict[str, Any]] = []
-            for code in code_strings:
-                entries.append(await _enrichment_entry_for_code(session, code))
-            context_obj = {"entries": entries, "chapter_info": chapter_info}
-
-        context_block = json.dumps(context_obj, indent=2, ensure_ascii=False)
-        print(json.dumps(context_obj, indent=2, ensure_ascii=False))
-        user_content = _build_user_content(request.message, context_block)        
-        prompt = get_prompt(request.mode)
-
-        # payload = {
-        #     "model": model,
-        #     "messages": [
-        #         {"role": "system", "content": prompt},
-        #         {"role": "user", "content": user_content},
-        #     ],
-        # }
-        payload = {
-            "model": model,
-            "messages": [
-                # NOTE: DeepSeek-R1 performs better with instructions in the User role
-                {"role": "user", "content": f"{prompt}\n\n{user_content}"},
-            ],
-            "temperature": 0.6, # Recommended for DeepSeek-R1 to prevent repetition
-            "max_tokens": 2048,
-            "stream": False
-        }
-        print(json.dumps(payload, indent=2, ensure_ascii=False))
-
-        headers = {
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json",
-        }
-        # referer = os.getenv("OPENROUTER_HTTP_REFERER")
-        # if referer:
-        #     headers["HTTP-Referer"] = referer
-        # title = os.getenv("OPENROUTER_APP_TITLE", "Codebookly")
-        # headers["X-OpenRouter-Title"] = title
-
-        try:
-            async with httpx.AsyncClient(timeout=120.0) as client:
-                # response = await client.post(
-                #     HF_URL,
-                #     headers=headers, 
-                #     json=payload
-                # )
-                response = await client.post(
-                    OPENROUTER_URL, headers=headers, json=payload
-                )
-        except httpx.TimeoutException:
-            self.logger.warning("OpenRouter request timed out")
-            return "The model took too long to respond. Try a shorter message or fewer selected codes."
-        except httpx.RequestError as e:
-            self.logger.warning("OpenRouter request failed: %s", e)
-            return "Could not reach the language model service. Check your network and try again."
-
-        if response.status_code >= 400:
-            self.logger.warning(
-                "OpenRouter HTTP %s: %s",
-                response.status_code,
-                response.text[:500],
-            )
-            return (
-                "The model returned an error. Verify OPENROUTER_API_KEY and quota, "
-                "then try again."
-            )
-
-        try:
-            data = response.json()
-        except ValueError:
-            self.logger.warning("OpenRouter non-JSON body")
-            return "Received an invalid response from the model. Please try again."
-
-        text = _extract_message_content(data)
-        if text:
-            return text
-
-        self.logger.warning("OpenRouter missing message content: %s", str(data)[:300])
-        return f"DEBUG_RAW_DATA: {json.dumps(data, indent=2, ensure_ascii=False)}"
+        if request.mode == "paraphrase":
+            return await self._handle_paraphrase(request, session, api_key, model)
+        return await self._handle_chat_modes(request, session, api_key, model)
 
 
 chatbot_svc = ChatbotService()
