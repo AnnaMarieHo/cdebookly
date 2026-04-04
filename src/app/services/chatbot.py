@@ -16,13 +16,13 @@ from app.schemas.schemas import (
 from app.services.enrichment import enrichment_service
 from app.services.chapter import chapter_service
 
-HF_URL = "https://router.huggingface.co/v1/chat/completions"
+# HF_URL = "https://router.huggingface.co/v1/chat/completions"
 
 # HF_MODEL = "deepseek-ai/DeepSeek-R1-Distill-Llama-8B"
-HF_MODEL = "meta-llama/Llama-3.3-70B-Instruct"
+# HF_MODEL = "meta-llama/Llama-3.3-70B-Instruct"
 # HF_API_KEY = env.get("HF_API_KEY")
-# OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
-# DEFAULT_MODEL = "nvidia/nemotron-3-super-120b-a12b:free"
+OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
+DEFAULT_MODEL = "nvidia/nemotron-3-super-120b-a12b:free"
 
 QUIZ_PROMPT = """You are a study assistant for the international plumbing codebook.
 
@@ -143,15 +143,15 @@ class ChatbotService:
         self.logger = logging.getLogger(__name__)
 
     async def handle(self, request: ChatbotRequest, session: AsyncSession) -> str:
-        # api_key = (os.getenv("OPENROUTER_API_KEY") or "").strip()
-        api_key = (os.getenv("HF_TOKEN") or "").strip()
+        api_key = (os.getenv("OPENROUTER_API_KEY") or "").strip()
+        # api_key = (os.getenv("HF_TOKEN") or "").strip()
         if not api_key:
             return (
                 "The chat assistant is not configured: set KEY in the "
                 "server environment."
             )
-        # model = (os.getenv("OPENROUTER_MODEL") or DEFAULT_MODEL).strip()
-        model = (os.getenv("HF_MODEL") or HF_MODEL).strip()        
+        model = (os.getenv("OPENROUTER_MODEL") or DEFAULT_MODEL).strip()
+        # model = (os.getenv("HF_MODEL") or HF_MODEL).strip()        
         # model = "deepseek-ai/DeepSeek-R1-Distill-Llama-8B:nscale"     
         code_strings = list(dict.fromkeys(request.selected_code_ids))
         
@@ -207,14 +207,14 @@ class ChatbotService:
 
         try:
             async with httpx.AsyncClient(timeout=120.0) as client:
-                response = await client.post(
-                    HF_URL,
-                    headers=headers, 
-                    json=payload
-                )
                 # response = await client.post(
-                #     OPENROUTER_URL, headers=headers, json=payload
+                #     HF_URL,
+                #     headers=headers, 
+                #     json=payload
                 # )
+                response = await client.post(
+                    OPENROUTER_URL, headers=headers, json=payload
+                )
         except httpx.TimeoutException:
             self.logger.warning("OpenRouter request timed out")
             return "The model took too long to respond. Try a shorter message or fewer selected codes."
