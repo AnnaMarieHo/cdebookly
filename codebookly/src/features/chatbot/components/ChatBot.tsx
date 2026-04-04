@@ -8,8 +8,12 @@ import {
   X,
 } from "lucide-react";
 import { chatService } from "../../../services/chatService";
+import type { ParaphraseRow } from "../types/paraphrase";
+import { downloadParaphraseCsv } from "../utils/downloadCSV";
 import { downloadChatMarkdown } from "../utils/downloadChatMarkdown";
+import { tryParseParaphraseJson } from "../utils/parseParaphraseResponse";
 import AssistantMarkdown from "./AssistantMarkdown";
+import { ParaphraseTable } from "./CSVPreview";
 
 type ChatBotProps = {
   /** Code IDs currently selected in the list (shared lifted state). */
@@ -22,7 +26,13 @@ type ChatMessage = {
   text: string;
   rawText?: string;
   assistantExpandedUi?: boolean;
+  /** Set when the assistant returned paraphrase batch JSON. */
+  paraphraseRows?: ParaphraseRow[] | null;
 };
+
+type ResponseModalState =
+  | { kind: "paraphrase"; rows: ParaphraseRow[] }
+  | { kind: "markdown"; text: string };
 
 function nextId() {
   return (
@@ -42,7 +52,7 @@ export function ChatBot({ selectedCodeIds }: ChatBotProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
-  const [responseModalText, setResponseModalText] = useState<string | null>(
+  const [responseModal, setResponseModal] = useState<ResponseModalState | null>(
     null,
   );
   const [mode, setMode] = useState<"general" | "quiz" | "paraphrase">(
@@ -111,18 +121,31 @@ export function ChatBot({ selectedCodeIds }: ChatBotProps) {
           "\n```";
       }
 
+      const paraphraseRows =
+        mode === "paraphrase" ? tryParseParaphraseJson(finalMessage) : null;
+      const assistantDisplayText =
+        paraphraseRows && paraphraseRows.length > 0
+          ? `Paraphrase results (${paraphraseRows.length} codes)`
+          : finalMessage;
+
       setMessages((prev) => [
         ...prev,
         {
           id: nextId(),
           role: "assistant",
-          text: finalMessage,
+          text: assistantDisplayText,
+          rawText: finalMessage,
+          paraphraseRows: paraphraseRows ?? undefined,
           assistantExpandedUi: useResponseModal,
         },
       ]);
 
       if (useResponseModal) {
-        setResponseModalText(finalMessage);
+        if (paraphraseRows && paraphraseRows.length > 0) {
+          setResponseModal({ kind: "paraphrase", rows: paraphraseRows });
+        } else {
+          setResponseModal({ kind: "markdown", text: finalMessage });
+        }
       }
     } catch {
       setMessages((prev) => [
@@ -135,9 +158,10 @@ export function ChatBot({ selectedCodeIds }: ChatBotProps) {
         },
       ]);
       if (useResponseModal) {
-        setResponseModalText(
-          "Something went wrong. Check the API and try again.",
-        );
+        setResponseModal({
+          kind: "markdown",
+          text: "Something went wrong. Check the API and try again.",
+        });
       }
     } finally {
       setSending(false);
@@ -149,7 +173,6 @@ export function ChatBot({ selectedCodeIds }: ChatBotProps) {
 
   const handleModeChange = (mode: "quiz" | "paraphrase") => {
     setMode((prevMode) => (prevMode === mode ? "general" : mode));
-    console.log("mode", mode);
   };
 
   const modalMarkdownClass =
@@ -157,40 +180,61 @@ export function ChatBot({ selectedCodeIds }: ChatBotProps) {
 
   return (
     <div className="pointer-events-none fixed bottom-4 right-4 z-[100] flex flex-col items-end gap-3 p-2 sm:bottom-15 sm:right-6">
-      {responseModalText !== null ? (
+      {responseModal !== null ? (
         <div
           className="pointer-events-auto fixed inset-0 z-[200] flex items-end justify-center bg-black/45 p-4 sm:items-center sm:p-6"
           role="presentation"
-          onClick={() => setResponseModalText(null)}
+          onClick={() => setResponseModal(null)}
         >
           <div
             role="dialog"
             aria-modal="true"
-            aria-label="Assistant response"
-            className="flex max-h-[min(90dvh,48rem)] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] shadow-xl"
+            aria-label={
+              responseModal.kind === "paraphrase"
+                ? "Paraphrase results"
+                : "Assistant response"
+            }
+            className="flex max-h-[min(90dvh,48rem)] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex shrink-0 items-center justify-between gap-3 border-b border-[var(--border)] px-4 py-3">
               <p className="m-0 text-sm font-semibold text-[var(--text-h)]">
-                Assistant response
+                {responseModal.kind === "paraphrase"
+                  ? "Paraphrase results"
+                  : "Assistant response"}
               </p>
               <div className="flex items-center gap-1">
-                <button
-                  type="button"
-                  onClick={() =>
-                    downloadChatMarkdown(responseModalText, {
-                      selectedCodeIds: sortedIds,
-                    })
-                  }
-                  className={downloadIconButtonClass}
-                  aria-label="Download response as Markdown"
-                >
-                  <Download size={18} aria-hidden />
-                </button>
+                {responseModal.kind === "paraphrase" ? (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      downloadParaphraseCsv(responseModal.rows, {
+                        selectedCodeIds: sortedIds,
+                      })
+                    }
+                    className={downloadIconButtonClass}
+                    aria-label="Download results as CSV"
+                  >
+                    <Download size={18} aria-hidden />
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      downloadChatMarkdown(responseModal.text, {
+                        selectedCodeIds: sortedIds,
+                      })
+                    }
+                    className={downloadIconButtonClass}
+                    aria-label="Download response as Markdown"
+                  >
+                    <Download size={18} aria-hidden />
+                  </button>
+                )}
                 <button
                   ref={responseModalCloseRef}
                   type="button"
-                  onClick={() => setResponseModalText(null)}
+                  onClick={() => setResponseModal(null)}
                   className={downloadIconButtonClass}
                   aria-label="Close response"
                 >
@@ -199,10 +243,14 @@ export function ChatBot({ selectedCodeIds }: ChatBotProps) {
               </div>
             </div>
             <div className="min-h-0 flex-1 overflow-y-auto p-4">
-              <AssistantMarkdown
-                text={responseModalText}
-                className={modalMarkdownClass}
-              />
+              {responseModal.kind === "paraphrase" ? (
+                <ParaphraseTable rows={responseModal.rows} />
+              ) : (
+                <AssistantMarkdown
+                  text={responseModal.text}
+                  className={modalMarkdownClass}
+                />
+              )}
             </div>
           </div>
         </div>
@@ -287,33 +335,82 @@ export function ChatBot({ selectedCodeIds }: ChatBotProps) {
                           {m.text}
                         </p>
                       ) : m.assistantExpandedUi ? (
-                        <div className={assistantBubbleBase}>
-                          <p className="m-0 mb-2 text-sm text-[var(--text-main)]">
-                            This reply opened in a larger window (3+ codes
-                            selected). Use the button to open it again anytime.
-                          </p>
-                          <div className="flex flex-wrap items-center gap-2">
-                            <button
-                              type="button"
-                              onClick={() => setResponseModalText(m.text)}
-                              className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--bg)] px-2.5 py-1.5 text-xs font-medium text-[var(--text-main)] hover:bg-black/5 dark:hover:bg-white/10"
-                            >
-                              <Maximize2 size={14} aria-hidden />
-                              Open full response
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() =>
-                                downloadChatMarkdown(m.text, {
-                                  selectedCodeIds: sortedIds,
-                                })
-                              }
-                              className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--bg)] px-2.5 py-1.5 text-xs font-medium text-[var(--text-main)] hover:bg-black/5 dark:hover:bg-white/10"
-                            >
-                              <Download size={14} aria-hidden />
-                              Download .md
-                            </button>
-                          </div>
+                        <div className={`${assistantBubbleBase} max-w-[min(100%,24rem)]`}>
+                          {m.paraphraseRows && m.paraphraseRows.length > 0 ? (
+                            <>
+                              <p className="m-0 mb-2 text-sm text-[var(--text-main)]">
+                                {m.text}
+                              </p>
+                              <div className="mb-3 max-h-48 overflow-hidden rounded-md border border-[var(--border)] bg-[var(--bg)]">
+                                <ParaphraseTable
+                                  rows={m.paraphraseRows}
+                                  maxHeight="11rem"
+                                />
+                              </div>
+                              <div className="flex flex-wrap items-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setResponseModal({
+                                      kind: "paraphrase",
+                                      rows: m.paraphraseRows!,
+                                    })
+                                  }
+                                  className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--bg)] px-2.5 py-1.5 text-xs font-medium text-[var(--text-main)] hover:bg-black/5 dark:hover:bg-white/10"
+                                >
+                                  <Maximize2 size={14} aria-hidden />
+                                  Open full table
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    downloadParaphraseCsv(m.paraphraseRows!, {
+                                      selectedCodeIds: sortedIds,
+                                    })
+                                  }
+                                  className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--bg)] px-2.5 py-1.5 text-xs font-medium text-[var(--text-main)] hover:bg-black/5 dark:hover:bg-white/10"
+                                >
+                                  <Download size={14} aria-hidden />
+                                  Download CSV
+                                </button>
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              <p className="m-0 mb-2 text-sm text-[var(--text-main)]">
+                                This reply opened in a larger window (3+ codes
+                                selected). Use the button to open it again
+                                anytime.
+                              </p>
+                              <div className="flex flex-wrap items-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setResponseModal({
+                                      kind: "markdown",
+                                      text: m.rawText ?? m.text,
+                                    })
+                                  }
+                                  className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--bg)] px-2.5 py-1.5 text-xs font-medium text-[var(--text-main)] hover:bg-black/5 dark:hover:bg-white/10"
+                                >
+                                  <Maximize2 size={14} aria-hidden />
+                                  Open full response
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    downloadChatMarkdown(m.rawText ?? m.text, {
+                                      selectedCodeIds: sortedIds,
+                                    })
+                                  }
+                                  className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--bg)] px-2.5 py-1.5 text-xs font-medium text-[var(--text-main)] hover:bg-black/5 dark:hover:bg-white/10"
+                                >
+                                  <Download size={14} aria-hidden />
+                                  Download .md
+                                </button>
+                              </div>
+                            </>
+                          )}
                         </div>
                       ) : (
                         <div className="relative max-w-[90%] self-start">
