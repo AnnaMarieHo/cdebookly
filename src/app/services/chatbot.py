@@ -60,7 +60,8 @@ The simplified_body must:
 - Preserve all enforceable meaning
 - Preserve all numbers and standards
 - Use direct regulatory verbs (Require, Prohibit, Provide, Limit)
-- Not simply rephrase the body again
+- No incomplete sentences
+- Do not simply rephrase the body again
 
 RULES:
 - Return a JSON object with a single key "rewrites" containing an array of objects.
