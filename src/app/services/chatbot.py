@@ -165,7 +165,7 @@ def _chapter_display_label(chapter_info: dict[str, Any] | None) -> str:
     return (
         # chapter_info.get("description")
         chapter_info.get("title")
-        or chapter_info.get("about")
+        or chapter_info.get("title")
         or "Unknown"
     )
 
@@ -223,13 +223,14 @@ class ChatbotService:
                 {"role": "user", "content": f"PROCESS THESE ENTRIES:\n{json.dumps(batch_input)}"},
             ],
             "response_format": {"type": "json_object"},
-            "temperature": 0.5,
+            "temperature": 0.2,
         }
 
         headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
 
         try:
             response = await client.post(OPENROUTER_URL, headers=headers, json=payload)
+            print(f"DEBUG_RESPONSE: {response.json()}")
             response.raise_for_status()
             raw_text = _extract_message_content(response.json())
             if not raw_text:
@@ -256,7 +257,7 @@ class ChatbotService:
         for cid in code_ids:
             all_enriched_entries.append(await _enrichment_entry_for_code(session, cid))
 
-        batch_size = 6
+        batch_size = 3
         chunks = [
             all_enriched_entries[i : i + batch_size]
             for i in range(0, len(all_enriched_entries), batch_size)
@@ -349,6 +350,7 @@ class ChatbotService:
                 response = await client.post(OPENROUTER_URL, headers=headers, json=payload)
                 response.raise_for_status()
                 data = response.json()
+                print(f"DEBUG_RESPONSE: {data}")
             raw = _extract_message_content(data)
             return (raw or "").strip() or "No response from the model."
         except Exception as e:

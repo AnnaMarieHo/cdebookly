@@ -37,7 +37,7 @@ class ChapterService:
         query = select(Chapters, CodesTable).join(CodesTable, Chapters.chapter == CodesTable.chapter).where(CodesTable.code == code)
         result = await session.execute(query)
         chapter_row = result.scalar_one_or_none()
-        return_val = {"about": chapter_row.about, "description": chapter_row.description}
+        return_val = {"title": chapter_row.title, "about": chapter_row.about, "description": chapter_row.description}
         return return_val
 
 chapter_service = ChapterService()
