@@ -11,7 +11,6 @@ import { fetchEnrichedForExport } from "../utils/fetchEnrichedForExport";
 
 type Props = {
   codes: CodeRecord[];
-  /** True while initial shell fetch or a browse navigation (section/chapter/etc.) is in flight */
   loading?: boolean;
   selection: CodeListSelectionState;
 };
