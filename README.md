@@ -10,7 +10,6 @@ Bulk select codes for download and further exploration
 <img width="782" height="841" alt="image" src="https://github.com/user-attachments/assets/64b8d68c-24e5-4c6b-af57-2db0fc7aba03" />
 Pull code context from across the IPC textbook and view relevant terms fron the index, committee designations, and standards
 
-<img width="352" height="369" alt="image" src="https://github.com/user-attachments/assets/4ecd554a-798f-4885-b819-9b3b01165e2c" />
 <img width="362" height="358" alt="image" src="https://github.com/user-attachments/assets/1124215e-3a96-4d99-8248-27535b6ddcaf" />
 Interact with a multi-mode chatbot to simplify clause context, and ask relevant questions
 
