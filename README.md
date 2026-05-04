@@ -14,7 +14,6 @@ Pull code context from across the IPC textbook and view relevant terms fron the 
 <img width="362" height="358" alt="image" src="https://github.com/user-attachments/assets/1124215e-3a96-4d99-8248-27535b6ddcaf" />
 Interact with a multi-mode chatbot to simplify clause context, and ask relevant questions
 
-<img width="330" height="283" alt="image" src="https://github.com/user-attachments/assets/f2b51edf-0da9-4d5b-a172-9cae302f5b56" />
 <img width="1032" height="785" alt="image" src="https://github.com/user-attachments/assets/efd712bc-f6b5-4e94-af5a-2bfbeee26cb0" />
 Download paraphrases in CSV format for later reference and study aid (Currently in test phase - undergoing debugging for consistent LLM output format)
 
